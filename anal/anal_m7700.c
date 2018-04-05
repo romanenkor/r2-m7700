@@ -14,10 +14,10 @@ enum {
 	X  /* operations, decreasing instruction size		*/
 };
 
-static int m7700_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) {
+static int m7700_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 
 	if (op == NULL)
-		return 1;
+		return 0;
 
 	/* TODO: fully implement opcodes for the whole lib 
 		Figure out how to handle the m and x flags for the device
@@ -25,9 +25,33 @@ static int m7700_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *b, int len) 
 	*/
 
 	memset(op, 0, sizeof(RAnalOp));
-	
+	const ut16 instruction = getInstruction(data);
+
 	op->addr = addr;
 	op->size = 2;
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->eob = false;
+
+	ut16 op = instruction;
+
+	switch (instruction) {
+	
+		case 0x42:
+			// find the prefix42 instruction corresponding to this op
+			break;
+		case 0x89:
+			// find the prefix89 instruction corresponding to this op
+			break;
+		default:
+			// find the general opcode corresponding to this op
+			break;
+	}
+
+	switch (GET_OPCODE(instruction)) {
+	
+
+	}
+
 }
 
 struct r_anal_plugin_t r_anal_plugin_m7700 = {
