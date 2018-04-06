@@ -26,6 +26,7 @@ RAsmPlugin r_asm_plugin_m7700 = {
 	.name = "m7700",
 	.desc = "Disassembly plugin for Mitsubishi M7700 Arch",
 	.arch = "m7700",
+	.bits= (int[]){8, 16},
 	.init = NULL,
 	.fini = NULL,
 	.disassemble = &disassemble,
@@ -35,7 +36,6 @@ RAsmPlugin r_asm_plugin_m7700 = {
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
-
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m7700
 };
