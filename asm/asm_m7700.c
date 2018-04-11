@@ -2,8 +2,8 @@
 #include <r_asm.h>
 #include <r_lib.h>
 
-#define OPS 15 // placeholder for number of ops, will implement later
 
+<<<<<<< HEAD
 const char *instruction_set[] = {
 
 	"ADC", "AND", "ASL", "BCC", "BCS", "BEQ", "BIT", "BMI", "BNE",  "BPL", "BRA",
@@ -28,7 +28,6 @@ static ut32 getInstruction(const ut8 *data) {
 
 static const  char *ops[OPS * 2] = {
 
-	//TODO: include ops/params
 };
 
 /* Main disassembly func */
@@ -37,7 +36,6 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	char arg[16];
 
 	int idx = (buf[0] & 0x0f) * 2;
-
 	op->size = 2;
 
 	// TODO: implement ut16 and ut8 differentiation for instructions, get from buff
@@ -68,7 +66,6 @@ RAsmPlugin r_asm_plugin_m7700 = {
 
 #ifndef CORELIB
 struct r_lib_struct_t radare_plugin = {
-
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_m7700
 };
