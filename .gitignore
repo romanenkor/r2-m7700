@@ -12,3 +12,5 @@
 *.log
 *.tlog
 *.idb
+*.xml
+*.pdb

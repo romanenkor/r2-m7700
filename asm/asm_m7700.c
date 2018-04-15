@@ -15,7 +15,6 @@ static ut16 getInstruction(const ut8 *data, unsigned int offset) {
  */
 static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 
-	OpCode ret =  (prefix == 0x89 ? ops89 + instruction : prefix == 0x42 ? ops42 + instruction : ops + instruction);
 }
 
 /* Main disassembly func */
