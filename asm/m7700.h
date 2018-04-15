@@ -11,8 +11,9 @@
 
 
  */
+#define OPS 256  // total ops size for our structs
 
-#define OPS = 256  // total ops size for our structs
+#define ut24 int // define ut24 int field, used for the multiple-param func calls - functionally same as the ut32 struct that comes with radare2, but this is a better name since we're just using the lower 3 bytes
 
 // credit to http://www.alcyone.org.uk/ssm/m7700ds.c for the tables for params/ops
 
@@ -70,8 +71,17 @@ enum
 	BBCD, BBCA, ACCB
 } reg;
 
+// general layout of the opcodes
+typedef struct {
+
+	unsigned char op;
+	unsigned char flag;
+	unsigned char arg;
+
+} OpCode;
+
 // params for each instruction (all prefixes not described below)
-static const  char *ops[OPS] = {
+static const OpCode ops[OPS] = {
 	{ BRK, I, SIG },{ ORA, M, DXI },{ UNK, I, SIG },{ ORA, M, S },
 { SEB, M, LDM4 },{ ORA, M, D },{ ASL, M, D },{ ORA, M, DLI },
 { PHP, I, IMP },{ ORA, M, IMM },{ ASL, M, ACC },{ PHD, I, IMP },
@@ -154,7 +164,7 @@ static const  char *ops[OPS] = {
 };
 
 // params for each instruction prefixed with x42
-static const char *ops42[OPS] = {
+static const OpCode ops42[OPS] = {
 	{ UNK, I, SIG },{ ORB, M, DXI },{ UNK, I, SIG },{ ORB, M, S },
 { UNK, I, SIG },{ ORB, M, D },{ UNK, I, SIG },{ ORB, M, DLI },
 { UNK, I, SIG },{ ORB, M, IMM },{ ASL, M, ACCB },{ UNK, I, SIG },
@@ -237,7 +247,7 @@ static const char *ops42[OPS] = {
 };
 
 // params for each instruction prefixed with x89
-static const char *ops89[OPS] = {
+static const OpCode ops89[OPS] = {
 	{ UNK, I, SIG },{ MPY, M, DXI },{ UNK, I, SIG },{ MPY, M, S },
 { UNK, I, SIG },{ MPY, M, D },{ UNK, I, SIG },{ MPY, M, DLI },
 { UNK, I, SIG },{ MPY, M, IMM },{ UNK, I, SIG },{ PHD, I, IMP },
@@ -319,15 +329,8 @@ static const char *ops89[OPS] = {
 { UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG }
 };
 
-// general layout of the opcodes
-typedef struct {
-
-	unsigned char op;
-	unsigned char flag;
-	unsigned char arg;
-
-} OpCode;
-
-static ut16 getInstruction(const ut8* data, unsigned int offset);
+static ut8 read8(const ut8* data, unsigned int offset);
+static ut16 read16(const ut8* data, unsigned int offset);
+static ut24 read24(const ut8* data, unsigned int offset);
 
 static OpCode* GET_OPCODE(ut16 instruction, byte offset);
