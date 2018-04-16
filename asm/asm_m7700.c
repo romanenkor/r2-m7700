@@ -35,7 +35,7 @@ static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 /* Main disassembly func */
 static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
-	a->immdisp = true; // force immediate display with # symbol (not ARM, but it uses the same syntax)
+	//a->immdisp = true; // force immediate display with # symbol (not ARM, but it uses the same syntax)
 
 	int idx = (buf[0] & 0x0f) * 2;
 	
