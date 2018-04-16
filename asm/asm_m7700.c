@@ -3,8 +3,6 @@
 #include <r_lib.h>
 #include "m7700.h"
 
-#define byte unsigned char
-
 static ut8 read8(const ut8 *data, unsigned int offset) {
 
 	ut8 ret = data[offset];

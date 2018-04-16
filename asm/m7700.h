@@ -14,6 +14,7 @@
 #define OPS 256  // total ops size for our structs
 
 #define ut24 int // define ut24 int field, used for the multiple-param func calls - functionally same as the ut32 struct that comes with radare2, but this is a better name since we're just using the lower 3 bytes
+#define byte unsigned char
 
 // credit to http://www.alcyone.org.uk/ssm/m7700ds.c for the tables for params/ops
 
