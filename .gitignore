@@ -14,3 +14,5 @@
 *.idb
 *.xml
 *.pdb
+*.pdb
+*.sqlite
