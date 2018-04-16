@@ -265,6 +265,7 @@ RAsmPlugin r_asm_plugin_m7700 = {
 	.name = "m7700",
 	.desc = "Disassembly plugin for Mitsubishi M7700 Arch",
 	.arch = "m7700",
+	.license = "None?",
 	.bits = 16,
 	.init = NULL,
 	.fini = NULL,
