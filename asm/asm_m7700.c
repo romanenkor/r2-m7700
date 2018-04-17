@@ -268,7 +268,11 @@ int main(int argc, char **argv) {
 RAsmPlugin r_asm_plugin_m7700 = {
 	.name = "m7700",
 	.arch = "m7700",
+<<<<<<< HEAD
 	.license = "LGPL3",
+=======
+	.license = "None?",
+>>>>>>> d1fb98eae2cdf4f2af435467324881f9b0ef629c
 	.bits = 16,
 	.desc = "Disassembly plugin for Mitsubishi M7700 Arch",
 	.disassemble = &disassemble
