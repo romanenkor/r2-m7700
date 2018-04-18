@@ -75,6 +75,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		GLOB_M = true;
 		break;
 	case CLM: 
+		op->size++;
 		GLOB_M = false;
 		break;
 	// Carry flag mutators
@@ -83,16 +84,16 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 
 	case CLC:
-		GLOB_M = false;
+		GLOB_X = false;
 		break;
 
 	// I flag mutators
 	case SEI: 
-		GLOB_M = true;
+		GLOB_I= true;
 		break;
 
 	case CLI :
-		GLOB_M = false;
+		GLOB_I = false;
 		break;
 	};
 
