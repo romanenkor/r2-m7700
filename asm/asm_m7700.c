@@ -40,7 +40,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	//int idx = (buf[0] & 0x0f) * 2;
 	
 	op->size = 1;
-	char dest[5] = "";
+	char dest[20];
 	ut16 instruction;
 	OpCode* opcd;
 	
@@ -109,12 +109,12 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
 			op->size++;
-			sprintf(dest, "l");
+			sprintf(dest, "%sl", dest);
 			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, 1));
 		}
 		else {
 			op->size+=2;
-			sprintf(dest, "x"); // higher bit, use full reg
+			sprintf(dest, "%sx", dest); // higher bit, use full reg
 			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, 1));
 		}
 		break;
