@@ -27,8 +27,6 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->eob = false;
 
-	ut16 op = instruction;
-
 	switch (opcd->op) {
 	
 		// load instructions
@@ -73,6 +71,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case PSH: // push content of register to stack
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
+		
 		// branch instructions
 		case BBC: // branch on bit clear 
 		case BBS: // branch on bit set
