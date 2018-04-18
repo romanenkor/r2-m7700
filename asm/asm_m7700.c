@@ -75,7 +75,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		GLOB_M = true;
 		break;
 	case CLM: 
-		//op->size++;
+		op->size++;
 		GLOB_M = false;
 		break;
 	// Carry flag mutators
@@ -289,7 +289,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 	case SIG : 
 		sprintf(op->buf_asm, "%s $%02x", instruction_set[opcd->op], read_8(buf, 1));
-		op->size+= 2;
+		op->size += 2;
 		break;
 
 	case MVN :
@@ -300,7 +300,6 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		
 	}
 
-	a->pc += op->size;
 }
 
 //Test main func
