@@ -45,33 +45,6 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	OpCode* opcd;
 	
 	instruction = read_8(buf, 0); // grab instruction from buffer, with offset of 0
-	
-	// Data len selection flag mutators
-	if (opcd->op == SEM) {
-		GLOB_M = 1; 
-	} 
-
-	if (opcd->op = CLM) {
-		GLOB_M = 0;
-	}
-
-	// Carry flag mutators
-	if (opcd->op == SEC) {
-		GLOB_X = 1;
-	}
-
-	if (opcd->op = CLC) {
-		GLOB_M = 0;
-	}
-
-	// I flag mutators
-	if (opcd->op == SEI) {
-		GLOB_M = 1;
-	}
-
-	if (opcd->op = CLI) {
-		GLOB_M = 0;
-	}
 
 	dprintf("Parse Bytes [%08x]", (int)((buf)[0]));
 
@@ -97,7 +70,34 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			opcd = GET_OPCODE (instruction, 0x00); // grab opcode from instruction
 			break;
 	}
-	
+
+	// Data len selection flag mutators
+	if (opcd->op == SEM) {
+		GLOB_M = 1;
+	}
+
+	if (opcd->op = CLM) {
+		GLOB_M = 0;
+	}
+
+	// Carry flag mutators
+	if (opcd->op == SEC) {
+		GLOB_X = 1;
+	}
+
+	if (opcd->op = CLC) {
+		GLOB_M = 0;
+	}
+
+	// I flag mutators
+	if (opcd->op == SEI) {
+		GLOB_M = 1;
+	}
+
+	if (opcd->op = CLI) {
+		GLOB_M = 0;
+	}
+
 	//sprintf(op->buf_asm, "%s", instruction_set[opcd->op]);
 
 	// the idea here is that you write the disassembled string to buf_asm - parsing out the args as you go
