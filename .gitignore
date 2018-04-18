@@ -17,3 +17,5 @@
 *.pdb
 *.sqlite
 *.sqlite
+*.pdb
+*.sqlite

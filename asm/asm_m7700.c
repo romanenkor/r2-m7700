@@ -64,7 +64,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			break;
 	}
 	
-	sprintf(op->buf_asm, "%s", instruction_set[opcd->op]);
+	//sprintf(op->buf_asm, "%s", instruction_set[opcd->op]);
 
 	// the idea here is that you write the disassembled string to buf_asm - parsing out the args as you go
 	switch (opcd->arg)
@@ -83,6 +83,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	case ACCB :
 		sprintf(op->buf_asm, "%s B", instruction_set[opcd->op]); 
 		break;
+
 // below causes segfault for some reason
 	case RELB :
 		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1*/ "Wew"); // Need to add a way to parse the param from the instruction in buff for last param
