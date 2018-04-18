@@ -133,7 +133,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	case IMM : // immediate addressing
 
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-		if ((opcd->flag == M && !GLOB_M) || (opcd->flag == X) && !GLOB_X) {
+		if (((opcd->flag == M) && !GLOB_M) || ((opcd->flag == X) && !GLOB_X)) {
 			op->size += 2;
 			sprintf(dest, "%sx", dest); // higher bit, use full reg
 			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, 1));
@@ -148,7 +148,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	case BBCD :
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-		if ((opcd->flag == M && !GLOB_M) || (opcd->flag == X) && !GLOB_X ){ //larger
+		if (((opcd->flag == M) && !GLOB_M) || ((opcd->flag == X) && !GLOB_X )){ //larger
 			op->size += 4;
 			sprintf(op->buf_asm, "%s #0x%04x, 0x%02x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1), (a->pc + len + 3 + read_8(buf, 4)), read_8(buf, 4));
 		}
@@ -160,7 +160,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	case BBCA :
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-		if ((opcd->flag == M && !GLOB_M) || (opcd->flag == X) && !GLOB_X) { // larger
+		if (((opcd->flag == M) && !GLOB_M) || ((opcd->flag == X) && !GLOB_X)) { // larger
 			op->size += 5;
 			sprintf(op->buf_asm, "%s #$%04x, $04x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1), (a->pc + len + 5 + read_8(buf, 5)), read_8(buf, 5));
 		}
@@ -171,45 +171,45 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 
 	case LDM4 :
-		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%02x, $04x", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
-			op->size += 2;
-		}
-		else {
+		if (((opcd->flag == M) && !GLOB_M) || (opcd->flag == X) && GLOB_X) {
 			sprintf(op->buf_asm, "%s #$%04x, $04x", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1));
 			op->size += 3;
+		}
+		else {
+			sprintf(op->buf_asm, "%s #$%02x, $04x", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
+			op->size += 2;
 		}
 		break;
 		
 	case LDM5 :
-		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%04x, $02x", instruction_set[opcd->op], read_8(buf, 2), read_16(buf, 1));
-			op->size += 3;
-		}
-		else {
+		if (((opcd->flag == M) && !GLOB_M) || (opcd->flag == X) && GLOB_X) {
 			sprintf(op->buf_asm, "%s #$%04x, $04x", instruction_set[opcd->op], read_16(buf, 2), read_16(buf, 1));
 			op->size += 4;
+		}
+		else {
+			sprintf(op->buf_asm, "%s #$%04x, $02x", instruction_set[opcd->op], read_8(buf, 2), read_16(buf, 1));
+			op->size += 3;
 		}
 		break;
 
 	case LDM4X : 
-		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%02x, $02x, X", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
-			op->size += 2;
-		}
-		else {
+		if (((opcd->flag == M) && !GLOB_M) || (opcd->flag == X) && GLOB_X) {
 			sprintf(op->buf_asm, "%s #$%04x, $02x, X", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1));
 			op->size += 3;
 		}
-		break;
-	case LDM5X : 
-		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%02x, $04x, X", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
-			op->size += 3;
-		}
 		else {
+			sprintf(op->buf_asm, "%s #$%02x, $02x, X", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
+			op->size += 2;
+		}
+		break;
+	case LDM5X : 		
+		if (((opcd->flag == M) && !GLOB_M) || (opcd->flag == X) && GLOB_X) {
 			sprintf(op->buf_asm, "%s #$%04x, $04x, X", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1));
 			op->size += 4;
+		}
+		else {
+			sprintf(op->buf_asm, "%s #$%02x, $04x, X", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
+			op->size += 3;
 		}
 		break;
 	case A : // accumulator addressing mode
