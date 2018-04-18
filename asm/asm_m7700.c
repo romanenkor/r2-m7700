@@ -91,10 +91,10 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		sprintf(op->buf_asm, "%s B", instruction_set[opcd->op]); 
 		break;
 
-// below causes segfault for some reason
+// below causes segfault for some reasonpd
 	case RELB :
 		op->size++;
-		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1)*/ "Wew"); // Need to add a way to parse the param from the instruction in buff for last param
+		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, read_8(buf, 1)); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 	case RELW :
@@ -123,11 +123,11 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
 			op->size += 3;
-			sprintf(op->buf_asm, "%s #$%02x, $%02x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1), (a->pc + len + 4 + read_8(buf, 3)), read_8(buf, 3));
+			sprintf(op->buf_asm, "%s #0x%02x, 0x%02x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1), (a->pc + len + 4 + read_8(buf, 3)), read_8(buf, 3));
 		}
 		else {
 			op->size += 4;
-			sprintf(op->buf_asm, "%s #$%04x, $%02x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1), (a->pc + len + 3 + read_8(buf, 4)), read_8(buf, 4));
+			sprintf(op->buf_asm, "%s #0x%04x, 0x%02x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1), (a->pc + len + 3 + read_8(buf, 4)), read_8(buf, 4));
 		}
 		break;
 
