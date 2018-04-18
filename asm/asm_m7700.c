@@ -46,7 +46,6 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	
 	instruction = read_8(buf, 0); // grab instruction from buffer, with offset of 0
 
-	dprintf("Parse Bytes [%08x]", (int)((buf)[0]));
 
 	// pull the prefix of the instruction off, grabing from the tables corresponding to the addressing mode
 	switch (instruction){
@@ -70,8 +69,8 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			opcd = GET_OPCODE (instruction, 0x00); // grab opcode from instruction
 			break;
 	}
-
 	// Data len selection flag mutators
+<<<<<<< HEAD
 	if (opcd->op == SEM) {
 		GLOB_M = 1;
 		a->bits = 8;
@@ -81,26 +80,14 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		GLOB_M = 0;
 		a->bits = 16;
 	}
+=======
+>>>>>>> 44e24d33aaa70cf2d11eb3f2efd0e492dfd83202
 
 	// Carry flag mutators
-	if (opcd->op == SEC) {
-		GLOB_X = 1;
-	}
 
-	if (opcd->op = CLC) {
-		GLOB_M = 0;
-	}
 
 	// I flag mutators
-	if (opcd->op == SEI) {
-		GLOB_M = 1;
-	}
 
-	if (opcd->op = CLI) {
-		GLOB_M = 0;
-	}
-
-	//sprintf(op->buf_asm, "%s", instruction_set[opcd->op]);
 
 	// the idea here is that you write the disassembled string to buf_asm - parsing out the args as you go
 	switch (opcd->arg)
@@ -120,7 +107,6 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		sprintf(op->buf_asm, "%s B", instruction_set[opcd->op]); 
 		break;
 
-// below causes segfault for some reasonpd
 	case RELB :
 		op->size++;
 		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1)*/ "wew"); // Need to add a way to parse the param from the instruction in buff for last param
@@ -137,12 +123,10 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if (((opcd->flag == M) && !GLOB_M) || ((opcd->flag == X) && !GLOB_X)) {
 			op->size += 2;
-			sprintf(dest, "%sl", dest); // higher bit, use full reg
 			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, 1));
 		}
 		else { // smaller instruction/params
 			op->size++;
-			sprintf(dest, "%sx", dest);
 			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, 1));
 
 		}
