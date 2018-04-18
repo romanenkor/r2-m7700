@@ -71,7 +71,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	{
 	// process the opcode structures
 	// switched using their params
-/*
+
 	case IMP :
 		sprintf(op->buf_asm, "%s", instruction_set[opcd->op]); 
 		break;
@@ -83,9 +83,9 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	case ACCB :
 		sprintf(op->buf_asm, "%s B", instruction_set[opcd->op]); 
 		break;
-
+// below causes segfault for some reason
 	case RELB :
-		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, read_8(buf, 1)); // Need to add a way to parse the param from the instruction in buff for last param
+		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1*/ "Wew"); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 	case RELW :
@@ -157,7 +157,6 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			sprintf(op->buf_asm, "%s #$%02x, $04x, X", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
 		}
 		break;
-
 	case A :
 	case PEA : 
 		sprintf(op->buf_asm, "%s $%04x", instruction_set[opcd->op], read_16(buf, 1));
@@ -165,12 +164,12 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	case AI :
 		sprintf(op->buf_asm, "%s ($%04x)", instruction_set[opcd->op], read_16(buf, 1));
 		break;
-	*/
+	
 	
 	case AL :
 		sprintf(op->buf_asm, "%s $%08x", instruction_set[opcd->op], read_24(buf, 1)); // might need to be set to 06x
 		break;
-	/*
+	
 	case ALX : 
 		sprintf(op->buf_asm, "%s $%08x, X", instruction_set[opcd->op], read_24(buf, 1));
 		break;
@@ -224,7 +223,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	case MVP :
 		sprintf(op->buf_asm, "%s $%02x, $%02x", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
 		break;
-		*/
+		
 	}
 }
 
@@ -268,11 +267,7 @@ int main(int argc, char **argv) {
 RAsmPlugin r_asm_plugin_m7700 = {
 	.name = "m7700",
 	.arch = "m7700",
-<<<<<<< HEAD
-	.license = "LGPL3",
-=======
-	.license = "None?",
->>>>>>> d1fb98eae2cdf4f2af435467324881f9b0ef629c
+	.license = "None",
 	.bits = 16,
 	.desc = "Disassembly plugin for Mitsubishi M7700 Arch",
 	.disassemble = &disassemble
