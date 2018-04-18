@@ -90,24 +90,24 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 // below causes segfault for some reason
 	case RELB :
-		//op->size++;
+		op->size++;
 		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1)*/ "Wew"); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 	case RELW :
 	case PER : 
-		op->size++;
+		op->size+=2;
 		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_16(buf, 1)) & 0xffff, read_16(buf, 1)); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 	case IMM : // immediate addressing
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
-			//op->size++;
+			op->size++;
 			sprintf(op->buf_asm, "%s DEST #$%02x", instruction_set[opcd->op], read_8(buf, 1));
 		}
 		else {
-			op->size++;
+			op->size+=2;
 			sprintf(op->buf_asm, "%s DEST #$%04x", instruction_set[opcd->op], read_16(buf, 1));
 		}
 		break;
@@ -115,11 +115,11 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	case BBCD :
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
-			op->size += 2;
+			op->size += 3;
 			sprintf(op->buf_asm, "%s #$%02x, $02x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1), (a->pc + len + 4 + read_8(buf, 3)), read_8(buf, 3));
 		}
 		else {
-			op->size += 3;
+			op->size += 4;
 			sprintf(op->buf_asm, "%s #$%04x, $02x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1), (a->pc + len + 3 + read_8(buf, 4)), read_8(buf, 4));
 		}
 		break;
@@ -128,140 +128,140 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
 			op->size += 4;
-			sprintf(op->buf_asm, "%s #$%04x, $04x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1), (a->pc + len + 5 + read_8(buf, 5)), read_8(buf, 5));
+			sprintf(op->buf_asm, "%s #$%02x, $04x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1), (a->pc + len + 4 + read_8(buf, 4)), read_8(buf, 4));
 		}
 		else {
-			op->size += 3;
-			sprintf(op->buf_asm, "%s #$%02x, $04x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1), (a->pc + len + 4 + read_8(buf, 4)), read_8(buf, 4));
+			op->size += 5;
+			sprintf(op->buf_asm, "%s #$%04x, $04x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1), (a->pc + len + 5 + read_8(buf, 5)), read_8(buf, 5));
 		}
 		break;
 
 	case LDM4 :
 		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%04x, $04x", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1));
+			sprintf(op->buf_asm, "%s #$%02x, $04x", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
 			op->size += 2;
 		}
 		else {
-			sprintf(op->buf_asm, "%s #$%02x, $04x", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
-			op->size ++;
+			sprintf(op->buf_asm, "%s #$%04x, $04x", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1));
+			op->size += 3;
 		}
 		break;
 		
 	case LDM5 :
 		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%04x, $04x", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1));
+			sprintf(op->buf_asm, "%s #$%04x, $02x", instruction_set[opcd->op], read_8(buf, 2), read_16(buf, 1));
 			op->size += 3;
 		}
 		else {
-			sprintf(op->buf_asm, "%s #$%04x, $02x", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
-			op->size += 2;
+			sprintf(op->buf_asm, "%s #$%04x, $04x", instruction_set[opcd->op], read_16(buf, 2), read_16(buf, 1));
+			op->size += 4;
 		}
 		break;
 
 	case LDM4X : 
 		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%04x, $02x, X", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1));
+			sprintf(op->buf_asm, "%s #$%02x, $02x, X", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
 			op->size += 2;
 		}
 		else {
-			sprintf(op->buf_asm, "%s #$%02x, $02x, X", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
-			op->size ++;
+			sprintf(op->buf_asm, "%s #$%04x, $02x, X", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1));
+			op->size += 3;
 		}
 		break;
 	case LDM5X : 
 		if ((opcd->flag == M) || (opcd->flag == X)) {
-			sprintf(op->buf_asm, "%s #$%04x, $04x, X", instruction_set[opcd->op], read_16(buf, 2), read_16(buf, 1));
+			sprintf(op->buf_asm, "%s #$%02x, $04x, X", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
 			op->size += 3;
 		}
 		else {
-			sprintf(op->buf_asm, "%s #$%02x, $04x, X", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
-			op->size += 2;
+			sprintf(op->buf_asm, "%s #$%04x, $04x, X", instruction_set[opcd->op], read_16(buf, 3), read_16(buf, 1));
+			op->size += 4;
 		}
 		break;
 	case A : // accumulator addressing mode
 	case PEA : 
 		sprintf(op->buf_asm, "%s $%04x", instruction_set[opcd->op], read_16(buf, 1));
-		op->size ++;
+		op->size +=2;
 		break;
 	case AI :
 		sprintf(op->buf_asm, "%s ($%04x)", instruction_set[opcd->op], read_16(buf, 1));
-		op->size ++;
+		op->size +=2;
 		break;
 	
 	
 	case AL :
 		sprintf(op->buf_asm, "%s $%08x", instruction_set[opcd->op], read_24(buf, 1)); // might need to be set to 06x
-		op->size += 2;
+		op->size += 3;
 		break;
 	
 	case ALX : 
 		sprintf(op->buf_asm, "%s $%08x, X", instruction_set[opcd->op], read_24(buf, 1));
-		op->size += 2;
+		op->size += 3;
 		break;
 	case AX :
 		sprintf(op->buf_asm, "%s $%04x, X", instruction_set[opcd->op], read_16(buf, 1));
-		op->size ++;
+		op->size += 2;
 		break;
 	case AXI :
 		sprintf(op->buf_asm, "(%s $%04x, X)", instruction_set[opcd->op], read_16(buf, 1));
-		op->size ++;
+		op->size += 2;
 		break;
 	case AY :
 		sprintf(op->buf_asm, "%s $%04x, Y", instruction_set[opcd->op], read_16(buf, 1));
-		op->size ++;
+		op->size += 2;
 		break;
 
 	case D : // direct addressing mode
 		sprintf(op->buf_asm, "%s $%02x", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 	case DI : // direct indirect addressing mode
 	case PEI :
 		sprintf(op->buf_asm, "%s ($%02x)", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 	case DIY : // direct indexed Y addressing mode
 		sprintf(op->buf_asm, "%s ($%02x), Y", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 	case DLI :
 		sprintf(op->buf_asm, "%s [$%02x]", instruction_set[opcd->op], read_8(buf, 1));		
-		//op->size++;
+		op->size++;
 		break;
 	case DLIY :
 		sprintf(op->buf_asm, "%s [$%02x], Y", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;	
 	case DX :
 		sprintf(op->buf_asm, "%s $%02x, X", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 	case DXI :  //direct indexed X addressing mode
 		sprintf(op->buf_asm, "%s ($%02x, X)", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 	case DY :
 		sprintf(op->buf_asm, "%s $%02x, Y", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 
 	case S: 
 		sprintf(op->buf_asm, "%s %s", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 	case SIY : 
 		sprintf(op->buf_asm, "%s %s, S", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size++;
 		break;
 	case SIG : 
 		sprintf(op->buf_asm, "%s $%02x", instruction_set[opcd->op], read_8(buf, 1));
-		//op->size++;
+		op->size+= 2;
 		break;
 
 	case MVN :
 	case MVP :
 		sprintf(op->buf_asm, "%s $%02x, $%02x", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
-		op->size++;
+		op->size += 2;
 		break;
 		
 	}
