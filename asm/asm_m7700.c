@@ -109,23 +109,23 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	// accumulator register used
 	case ACC :
-		sprintf(op->buf_asm, "%s A", instruction_set[opcd->op]); 
+		sprintf(op->buf_asm, "%s %s", instruction_set[opcd->op], dest); 
 		break;
 	case ACCB :
-		sprintf(op->buf_asm, "%s B", instruction_set[opcd->op]); 
+		sprintf(op->buf_asm, "%s %s", instruction_set[opcd->op], dest); 
 		break;
 
 // below causes segfault for some reason
 	case RELB :
 		//op->size++;
-		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + op->size + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1)*/ "wew"); // Need to add a way to parse the param from the instruction in buff for last param
+		sprintf(op->buf_asm, "%s 0x%06x", instruction_set[opcd->op], (1 + a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		op->size++;
 		break;
 
 	case RELW :
 	case PER : 
 		op->size+=2;
-		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + op->size + read_16(buf, 1)) & 0xffff, /*8read_16(buf, 1)*/ "wew"); // Need to add a way to parse the param from the instruction in buff for last param
+		sprintf(op->buf_asm, "%s 0x%06x", instruction_set[opcd->op], (1 + a->pc + op->size + read_16(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 	case IMM : // immediate addressing
