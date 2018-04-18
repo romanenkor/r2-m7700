@@ -137,15 +137,15 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		if (((opcd->flag == M) && !GLOB_M) || ((opcd->flag == X) && !GLOB_X)) {
 
 			sprintf(dest, "%sx", dest); // higher bit, use full reg
-			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, 1));			
+
+			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, op->size));			
 			op->size += 2;
 		}
 		else { // smaller instruction/params
 
 			sprintf(dest, "%sl", dest);
-			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, 1));			
+			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, op->size));			
 			op->size++;
-
 		}
 		break;
 
