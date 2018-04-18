@@ -40,7 +40,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	//int idx = (buf[0] & 0x0f) * 2;
 	
 	op->size = 1;
-
+	char *dest = "";
 	ut16 instruction;
 	OpCode* opcd;
 	
@@ -52,7 +52,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	switch (instruction){
 		// first two cases, remove prefix - otherwise just pass instruction
 		case 0x42: // x42 prefix - 
-			
+			dest += 'b'; // b reg prefix;
 			instruction = read_8(buf, 1); // grab next instruction from buffer, with offset of 1
 			opcd = GET_OPCODE (instruction, 0x42); // grab opcode from instruction
 			op->size++;
@@ -66,6 +66,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			//a->pc++;
 			break;
 		default:   // other prefixes
+			dest += 'a';
 			opcd = GET_OPCODE (instruction, 0x00); // grab opcode from instruction
 			break;
 	}
@@ -103,14 +104,18 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 
 	case IMM : // immediate addressing
+
+		
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
 			op->size++;
-			sprintf(op->buf_asm, "%s DEST #$%02x", instruction_set[opcd->op], read_8(buf, 1));
+			dest += 'l'; // lower bit, use a/bl reg
+			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, 1));
 		}
 		else {
 			op->size+=2;
-			sprintf(op->buf_asm, "%s DEST #$%04x", instruction_set[opcd->op], read_16(buf, 1));
+			dest += 'x'; // higher bit, use full reg
+			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, 1));
 		}
 		break;
 
@@ -118,11 +123,11 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
 			op->size += 3;
-			sprintf(op->buf_asm, "%s #$%02x, $02x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1), (a->pc + len + 4 + read_8(buf, 3)), read_8(buf, 3));
+			sprintf(op->buf_asm, "%s #$%02x, $%02x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1), (a->pc + len + 4 + read_8(buf, 3)), read_8(buf, 3));
 		}
 		else {
 			op->size += 4;
-			sprintf(op->buf_asm, "%s #$%04x, $02x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1), (a->pc + len + 3 + read_8(buf, 4)), read_8(buf, 4));
+			sprintf(op->buf_asm, "%s #$%04x, $%02x, %06x (%s)", instruction_set[opcd->op], read_16(buf, 2), read_8(buf, 1), (a->pc + len + 3 + read_8(buf, 4)), read_8(buf, 4));
 		}
 		break;
 
