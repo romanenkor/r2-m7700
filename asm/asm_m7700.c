@@ -97,6 +97,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 	default:
 		//FUCK YOU
+		break;
 	};
 
 	// the idea here is that you write the disassembled string to buf_asm - parsing out the args as you go
