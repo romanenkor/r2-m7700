@@ -46,8 +46,6 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	
 	instruction = read_8(buf, 0); // grab instruction from buffer, with offset of 0
 
-	//dprintf("Parse Bytes [%08x]", (int)((buf)[0]));
-
 	// pull the prefix of the instruction off, grabing from the tables corresponding to the addressing mode
 	switch (instruction){
 		// first two cases, remove prefix - otherwise just pass instruction
@@ -72,25 +70,13 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	}
 	switch (opcd->op){
 	// Data len selection flag mutators
-<<<<<<< HEAD
-	if (opcd->op == SEM) {
-		GLOB_M = 1;
-		a->bits = 8;
-	}
 
-	if (opcd->op = CLM) {
-		GLOB_M = 0;
-		a->bits = 16;
-	}
-=======
 	case SEM:
 		GLOB_M = true;
 		break;
 	case CLM: 
 		GLOB_M = false;
 		break;
->>>>>>> 44e24d33aaa70cf2d11eb3f2efd0e492dfd83202
-
 	// Carry flag mutators
 	case SEC:
 		GLOB_X = true;
