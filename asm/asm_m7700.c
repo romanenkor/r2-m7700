@@ -39,7 +39,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	int idx = (buf[0] & 0x0f) * 2;
 	
-	op->size = 2;
+	op->size = 1;
 
 	ut16 instruction;
 	OpCode* opcd;
@@ -54,10 +54,12 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		case 0x42: // x42 prefix - 
 			instruction = read_8(buf, 0); // grab next instruction from buffer, with offset of 0
 			opcd = GET_OPCODE (instruction, 0x42); // grab opcode from instruction
+			op->size++;
 			break;
 		case 0x89: // x89 prefix  -
 			instruction = read_8(buf, 0); // grab next instruction from buffer, with offset of 0
 			opcd = GET_OPCODE (instruction, 0x89); // grab opcode from instruction
+			op->size++;
 			break;
 		default:   // other prefixes
 			opcd = GET_OPCODE (instruction, 0x00); // grab opcode from instruction
