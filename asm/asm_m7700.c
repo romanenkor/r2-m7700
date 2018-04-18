@@ -52,11 +52,13 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	switch (instruction){
 		// first two cases, remove prefix - otherwise just pass instruction
 		case 0x42: // x42 prefix - 
+			a->pc++;
 			instruction = read_8(buf, 0); // grab next instruction from buffer, with offset of 0
 			opcd = GET_OPCODE (instruction, 0x42); // grab opcode from instruction
 			op->size++;
 			break;
 		case 0x89: // x89 prefix  -
+			a->pc++;
 			instruction = read_8(buf, 0); // grab next instruction from buffer, with offset of 0
 			opcd = GET_OPCODE (instruction, 0x89); // grab opcode from instruction
 			op->size++;
