@@ -46,6 +46,33 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	
 	instruction = read_8(buf, 0); // grab instruction from buffer, with offset of 0
 	
+	// Data len selection flag mutators
+	if (opcd->op == SEM) {
+		GLOB_M = 1; 
+	} 
+
+	if (opcd->op = CLM) {
+		GLOB_M = 0;
+	}
+
+	// Carry flag mutators
+	if (opcd->op == SEC) {
+		GLOB_X = 1;
+	}
+
+	if (opcd->op = CLC) {
+		GLOB_M = 0;
+	}
+
+	// I flag mutators
+	if (opcd->op == SEI) {
+		GLOB_M = 1;
+	}
+
+	if (opcd->op = CLI) {
+		GLOB_M = 0;
+	}
+
 	dprintf("Parse Bytes [%08x]", (int)((buf)[0]));
 
 	// pull the prefix of the instruction off, grabing from the tables corresponding to the addressing mode
@@ -105,9 +132,8 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	case IMM : // immediate addressing
 
-		
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-		if ((opcd->flag == M) || (opcd->flag == X)) {
+		if ((opcd->flag == M && GLOB_M) || (opcd->flag == X && GLOB_X)) {
 			op->size++;
 			sprintf(dest, "%sl", dest);
 			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, 1));
@@ -121,7 +147,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	case BBCD :
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-		if ((opcd->flag == M) || (opcd->flag == X)) {
+		if ((opcd->flag == M && GLOB_M) || (opcd->flag == X && GLOB_X)) {
 			op->size += 3;
 			sprintf(op->buf_asm, "%s #0x%02x, 0x%02x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1), (a->pc + len + 4 + read_8(buf, 3)), read_8(buf, 3));
 		}
@@ -133,7 +159,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	case BBCA :
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-		if ((opcd->flag == M) || (opcd->flag == X)) {
+		if ((opcd->flag == M && GLOB_M) || (opcd->flag == X && GLOB_X)) {
 			op->size += 4;
 			sprintf(op->buf_asm, "%s #$%02x, $04x, %06x (%s)", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1), (a->pc + len + 4 + read_8(buf, 4)), read_8(buf, 4));
 		}
@@ -144,7 +170,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 
 	case LDM4 :
-		if ((opcd->flag == M) || (opcd->flag == X)) {
+		if ((opcd->flag == M && GLOB_M) || (opcd->flag == X && GLOB_X)) {
 			sprintf(op->buf_asm, "%s #$%02x, $04x", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
 			op->size += 2;
 		}
@@ -155,7 +181,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 		
 	case LDM5 :
-		if ((opcd->flag == M) || (opcd->flag == X)) {
+		if ((opcd->flag == M && GLOB_M) || (opcd->flag == X && GLOB_X)) {
 			sprintf(op->buf_asm, "%s #$%04x, $02x", instruction_set[opcd->op], read_8(buf, 2), read_16(buf, 1));
 			op->size += 3;
 		}
@@ -166,7 +192,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		break;
 
 	case LDM4X : 
-		if ((opcd->flag == M) || (opcd->flag == X)) {
+		if ((opcd->flag == M && GLOB_M) || (opcd->flag == X && GLOB_X)) {
 			sprintf(op->buf_asm, "%s #$%02x, $02x, X", instruction_set[opcd->op], read_8(buf, 2), read_8(buf, 1));
 			op->size += 2;
 		}
@@ -176,7 +202,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		}
 		break;
 	case LDM5X : 
-		if ((opcd->flag == M) || (opcd->flag == X)) {
+		if ((opcd->flag == M && GLOB_M) || (opcd->flag == X && GLOB_X)) {
 			sprintf(op->buf_asm, "%s #$%02x, $04x, X", instruction_set[opcd->op], read_8(buf, 3), read_16(buf, 1));
 			op->size += 3;
 		}

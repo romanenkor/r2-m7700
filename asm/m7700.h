@@ -335,3 +335,8 @@ static ut16 read_16(const ut8* data, unsigned int offset);
 static ut24 read_24(const ut8* data, unsigned int offset);
 
 static OpCode* GET_OPCODE(ut16 instruction, byte offset);
+
+static bool GLOB_M;
+static bool GLOB_X;
+static bool GLOB_I;
+// global trackers for the flag bits
