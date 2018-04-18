@@ -117,13 +117,13 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 // below causes segfault for some reason
 	case RELB :
 		op->size++;
-		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1)*/ "wew"); // Need to add a way to parse the param from the instruction in buff for last param
+		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + op->size + read_8(buf, 1)) & 0xffff, /*read_8(buf, 1)*/ "wew"); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 	case RELW :
 	case PER : 
 		op->size+=2;
-		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + len + read_16(buf, 1)) & 0xffff, /*8read_16(buf, 1)*/ "wew"); // Need to add a way to parse the param from the instruction in buff for last param
+		sprintf(op->buf_asm, "%s %06x (%s)", instruction_set[opcd->op], (a->pc + op->size + read_16(buf, 1)) & 0xffff, /*8read_16(buf, 1)*/ "wew"); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 	case IMM : // immediate addressing
