@@ -40,7 +40,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	//int idx = (buf[0] & 0x0f) * 2;
 	
 	op->size = 1;
-	char *dest = "";
+	char dest[2] = "";
 	ut16 instruction;
 	OpCode* opcd;
 	
@@ -52,7 +52,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	switch (instruction){
 		// first two cases, remove prefix - otherwise just pass instruction
 		case 0x42: // x42 prefix - 
-			dest = "b"; // b reg prefix;
+			dest[0] = "b"; // b reg prefix;
 			instruction = read_8(buf, 1); // grab next instruction from buffer, with offset of 1
 			opcd = GET_OPCODE (instruction, 0x42); // grab opcode from instruction
 			op->size++;
@@ -66,7 +66,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			//a->pc++;
 			break;
 		default:   // other prefixes
-			dest = "a";
+			dest[0] = "a";
 			opcd = GET_OPCODE (instruction, 0x00); // grab opcode from instruction
 			break;
 	}
@@ -109,12 +109,12 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if ((opcd->flag == M) || (opcd->flag == X)) {
 			op->size++;
-			dest = dest + 'l'; // lower bit, use a/bl reg
+			dest[1] = 'l'; // lower bit, use a/bl reg
 			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, 1));
 		}
 		else {
 			op->size+=2;
-			dest += 'x'; // higher bit, use full reg
+			dest[1] = 'x'; // higher bit, use full reg
 			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, 1));
 		}
 		break;
