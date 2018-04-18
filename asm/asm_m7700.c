@@ -74,10 +74,12 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	// Data len selection flag mutators
 	if (opcd->op == SEM) {
 		GLOB_M = 1;
+		a->bits = 8;
 	}
 
 	if (opcd->op = CLM) {
 		GLOB_M = 0;
+		a->bits = 16;
 	}
 
 	// Carry flag mutators
@@ -342,7 +344,7 @@ RAsmPlugin r_asm_plugin_m7700 = {
 	.name = "m7700",
 	.arch = "m7700",
 	.license = "None",
-	.bits = 16,
+	.bits = [8, 16],
 	.desc = "Disassembly plugin for Mitsubishi M7700 Arch",
 	.disassemble = &disassemble
 };
