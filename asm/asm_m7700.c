@@ -300,6 +300,8 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		
 	}
 
+	op->buf_inc += op->size;
+
 }
 
 //Test main func
