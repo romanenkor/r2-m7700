@@ -40,7 +40,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	//int idx = (buf[0] & 0x0f) * 2;
 	
 	op->size = 1;
-	char* dest = "";
+	char dest[5] = "";
 	ut16 instruction;
 	OpCode* opcd;
 	
