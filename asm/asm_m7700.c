@@ -135,12 +135,12 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 		if (((opcd->flag == M) && !GLOB_M) || ((opcd->flag == X) && !GLOB_X)) {
 			op->size += 2;
-			sprintf(dest, "%sx", dest); // higher bit, use full reg
+			sprintf(dest, "%sl", dest); // higher bit, use full reg
 			sprintf(op->buf_asm, "%s %s #0x%04x", instruction_set[opcd->op], dest, read_16(buf, 1));
 		}
 		else { // smaller instruction/params
 			op->size++;
-			sprintf(dest, "%sl", dest);
+			sprintf(dest, "%sx", dest);
 			sprintf(op->buf_asm, "%s %s #0x%02x", instruction_set[opcd->op], dest, read_8(buf, 1));
 
 		}
