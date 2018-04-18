@@ -330,8 +330,8 @@ static const OpCode ops89[OPS] = {
 { UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG }
 };
 
-static ut8 read8(const ut8* data, unsigned int offset);
-static ut16 read16(const ut8* data, unsigned int offset);
-static ut24 read24(const ut8* data, unsigned int offset);
+static ut8 read_8(const ut8* data, unsigned int offset);
+static ut16 read_16(const ut8* data, unsigned int offset);
+static ut24 read_24(const ut8* data, unsigned int offset);
 
 static OpCode* GET_OPCODE(ut16 instruction, byte offset);
