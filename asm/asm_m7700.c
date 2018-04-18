@@ -75,7 +75,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		GLOB_M = true;
 		break;
 	case CLM: 
-		op->size++;
+		//op->size++;
 		GLOB_M = false;
 		break;
 	// Carry flag mutators
@@ -118,7 +118,7 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 // below causes segfault for some reason
 	case RELB :
 		//op->size++;
-		sprintf(op->buf_asm, "%s 0x%06x", instruction_set[opcd->op], (1 + a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+		sprintf(op->buf_asm, "%s 0x%04x", instruction_set[opcd->op], (1 + a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		op->size++;
 		break;
 
