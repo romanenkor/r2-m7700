@@ -23,7 +23,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	OpCode * opcd = GET_OPCODE(instruction, instruction);
 
 	op->addr = addr;
-	op->size = 2;
+	op->size = 4;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->eob = false;
 
@@ -106,9 +106,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 		case UNK: // unknown op
 			op->type = R_ANAL_OP_TYPE_UNK;
-
 		default:
-
 			break;
 	}
 	

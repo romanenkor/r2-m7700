@@ -1,4 +1,24 @@
-#define OPS = 256  // placeholder for number of ops, will implement later
+/*
+	m7700 instructions
+
+	m and x flags select between word, byte operations for each instruction
+	This allows for some instructions to be 8 bit, and some to be 16 bit. 
+
+	Each instruction also has an addressing mode that can fall into one of 28 different categories. 
+
+	There are a grand total of 103 instructions for the base m7700, each has a few permutations for each of the
+	addressing/bit length mode above.
+
+
+ */
+#define OPS 256  // total ops size for our structs
+
+#define ut24 int // define ut24 int field, used for the multiple-param func calls - functionally same as the ut32 struct that comes with radare2, but this is a better name since we're just using the lower 3 bytes
+#define byte unsigned char
+
+// credit to http://www.alcyone.org.uk/ssm/m7700ds.c for the tables for params/ops
+
+// string labels for each instruction
 
 const char *instruction_set[] = {
 
@@ -16,22 +36,8 @@ const char *instruction_set[] = {
 	"BBC", "BBS", "TBY", "ANDB","PUL", "PSH", "PLB", "XAB", "PHB",  "TBS", "TBD",
 	"TDB"
 };
-// credit to http://www.alcyone.org.uk/ssm/m7700ds.c for the tables for params/ops
-enum
-{
-	I, /* ignore */
-	M, /* check m bit */
-	X  /* check x bit */
-};
 
-enum
-{
-	IMP, ACC, RELB, RELW, IMM, A, AI, AL, ALX, AX, AXI,
-	AY, D, DI, DIY, DLI, DLIY, DX, DXI, DY, S, SIY,
-	SIG /*, MVN , MVP , PEA , PEI , PER */, LDM4, LDM5, LDM4X, LDM5X,
-	BBCD, BBCA, ACCB
-};
-
+// enumeration of the above  
 enum
 {
 	ADC, AND, ASL, BCC, BCS, BEQ, BIT, BMI, BNE, BPL, BRA,
@@ -47,9 +53,36 @@ enum
 	SBCB, EORB, TBX, CMPB, INB, DEB, TXB, TYB, LSRB, ORB, CLB,
 	BBC, BBS, TBY, ANDB, PUL, PSH, PLAB, XAB, PHB, TBS, TBD,
 	TDB
+} op;
+
+// addressing mode bits
+enum
+{
+	I, /* ignore */
+	M, /* check m bit */
+	X  /* check x bit */
 };
 
-static const  char *ops[OPS] = {
+// register label enum
+enum
+{
+	IMP, ACC, RELB, RELW, IMM, A, AI, AL, ALX, AX, AXI,
+	AY, D, DI, DIY, DLI, DLIY, DX, DXI, DY, S, SIY,
+	SIG /*, MVN , MVP , PEA , PEI , PER */, LDM4, LDM5, LDM4X, LDM5X,
+	BBCD, BBCA, ACCB
+} reg;
+
+// general layout of the opcodes
+typedef struct {
+
+	unsigned char op;
+	unsigned char flag;
+	unsigned char arg;
+
+} OpCode;
+
+// params for each instruction (all prefixes not described below)
+static const OpCode ops[OPS] = {
 	{ BRK, I, SIG },{ ORA, M, DXI },{ UNK, I, SIG },{ ORA, M, S },
 { SEB, M, LDM4 },{ ORA, M, D },{ ASL, M, D },{ ORA, M, DLI },
 { PHP, I, IMP },{ ORA, M, IMM },{ ASL, M, ACC },{ PHD, I, IMP },
@@ -131,7 +164,8 @@ static const  char *ops[OPS] = {
 { JSR, I, AXI },{ SBC, M, AX },{ INC, M, AX },{ SBC, M, ALX }
 };
 
-static const char *ops42[OPS] = {
+// params for each instruction prefixed with x42
+static const OpCode ops42[OPS] = {
 	{ UNK, I, SIG },{ ORB, M, DXI },{ UNK, I, SIG },{ ORB, M, S },
 { UNK, I, SIG },{ ORB, M, D },{ UNK, I, SIG },{ ORB, M, DLI },
 { UNK, I, SIG },{ ORB, M, IMM },{ ASL, M, ACCB },{ UNK, I, SIG },
@@ -213,7 +247,8 @@ static const char *ops42[OPS] = {
 { UNK, I, SIG },{ SBCB, M, AX },{ UNK, I, SIG },{ SBCB, M, ALX }
 };
 
-static const char *ops89[OPS] = {
+// params for each instruction prefixed with x89
+static const OpCode ops89[OPS] = {
 	{ UNK, I, SIG },{ MPY, M, DXI },{ UNK, I, SIG },{ MPY, M, S },
 { UNK, I, SIG },{ MPY, M, D },{ UNK, I, SIG },{ MPY, M, DLI },
 { UNK, I, SIG },{ MPY, M, IMM },{ UNK, I, SIG },{ PHD, I, IMP },
@@ -295,10 +330,60 @@ static const char *ops89[OPS] = {
 { UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG }
 };
 
+//define registers
+typedef enum register_t {
+	a, b, x, y, s, pc, pg, dt, dpr, ps
+} Register;
+
+#define SIZE_AX		16
+#define SIZE_AL		8
+
+#define SIZE_BX		16
+#define SIZE_BL		8
+
+#define SIZE_XX		16
+#define SIZE_XL		8
+
+#define SIZE_YX		16
+#define SIZE_YL		8
+
+#define SIZE_SX		16
+#define SIZE_SL		8
+
+#define SIZE_DT		8
+
+#define SIZE_PG		8
+#define SIZE_PCH	8
+#define	SIZE_PCL	8
+#define SIZE_PCR	SIZE_PG + SIZE_PCH + SIZE_PCL
+
+#define SIZE_DPRX	16
+#define SIZE_DPRL	8
+
+#define SIZE_PSX	16
+#define SIZE_PSL	8
+
 typedef struct {
 
-	unsigned char op;
-	unsigned char flag;
-	unsigned char arg;
+	     char IPL = 0x000, // processor interrupt priority level - 3 bit
+	     
+	     bool N = 0, // negative flag
+	     bool V = 0, // overflow flag
+	     bool m = 0, // data length flag
+	     bool x = 0, // index register length flag
+	     bool D = 0, // decimal mode flag
+	     bool I = 0, // interrupt disable flag
+	     bool Z = 0, // zero flag
+	     bool C = 0  // carry flag
+} PS;
 
-} OpCode;
+static ut8 read_8(const ut8* data, unsigned int offset);
+static ut16 read_16(const ut8* data, unsigned int offset);
+static ut24 read_24(const ut8* data, unsigned int offset);
+
+static OpCode* GET_OPCODE(ut16 instruction, byte offset);
+
+static bool GLOB_M = true;
+static bool GLOB_X = false;
+static bool GLOB_I = false;
+// global trackers for the flag bits
