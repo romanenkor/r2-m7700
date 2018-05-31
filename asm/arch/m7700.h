@@ -330,53 +330,6 @@ static const OpCode ops89[OPS] = {
 { UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG }
 };
 
-//define registers
-typedef enum register_t {
-	a, b, x, y, s, pc, pg, dt, dpr, ps
-} Register;
-
-#define SIZE_AX		16
-#define SIZE_AL		8
-
-#define SIZE_BX		16
-#define SIZE_BL		8
-
-#define SIZE_XX		16
-#define SIZE_XL		8
-
-#define SIZE_YX		16
-#define SIZE_YL		8
-
-#define SIZE_SX		16
-#define SIZE_SL		8
-
-#define SIZE_DT		8
-
-#define SIZE_PG		8
-#define SIZE_PCH	8
-#define	SIZE_PCL	8
-#define SIZE_PCR	SIZE_PG + SIZE_PCH + SIZE_PCL
-
-#define SIZE_DPRX	16
-#define SIZE_DPRL	8
-
-#define SIZE_PSX	16
-#define SIZE_PSL	8
-
-typedef struct {
-
-	     char IPL = 0x000, // processor interrupt priority level - 3 bit
-	     
-	     bool N = 0, // negative flag
-	     bool V = 0, // overflow flag
-	     bool m = 0, // data length flag
-	     bool x = 0, // index register length flag
-	     bool D = 0, // decimal mode flag
-	     bool I = 0, // interrupt disable flag
-	     bool Z = 0, // zero flag
-	     bool C = 0  // carry flag
-} PS;
-
 static ut8 read_8(const ut8* data, unsigned int offset);
 static ut16 read_16(const ut8* data, unsigned int offset);
 static ut24 read_24(const ut8* data, unsigned int offset);

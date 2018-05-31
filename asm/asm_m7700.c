@@ -1,8 +1,9 @@
 #include <string.h>
 #include <r_asm.h>
 #include <r_lib.h>
-#include "m7700.h"
-
+//#include "m7700.h"
+#include "arch/m7700.c"
+/*
 static ut8 read_8(const ut8 *data, unsigned int offset) {
 
 	ut8 ret = data[offset];
@@ -21,20 +22,23 @@ static ut24 read_24(const ut8 *data, unsigned int offset) {
 	ret |= ret | data[offset + 1] << 8;
 	return ret | data[offset + 2] << 16;
 }
-
+*/
 /*
 	Reads args from the opcode prefix arrays in the header, based off of prefix
 
 	Each prefix contains func name, the addressing flag bit, and the arg
  */
+/*
 static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 
 	return (prefix == 0x89 ? ops89 + instruction : (prefix == 0x42 ? ops42 + instruction : ops + instruction));
 }
+*/
 
 /* Main disassembly func */
 static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
+/*
 	//a->immdisp = true; // force immediate display with # symbol (not ARM, but it uses the same syntax)
 
 	//int idx = (buf[0] & 0x0f) * 2;
@@ -304,7 +308,8 @@ static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	op->buf_inc += op->size;
 	return op->size;
-
+*/
+	return m7700_disassemble(a, op, buf, len);
 }
 
 //Test main func

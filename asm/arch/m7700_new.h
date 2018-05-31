@@ -11,6 +11,14 @@
 
 
  */
+
+#ifndef R_ASM
+	#include <r_asm.h>
+#endif
+#ifndef R_LIB
+	#include <r_lib.h>
+#endif
+
 #define OPS 256  // total ops size for our structs
 
 #define ut24 int // define ut24 int field, used for the multiple-param func calls - functionally same as the ut32 struct that comes with radare2, but this is a better name since we're just using the lower 3 bytes
@@ -328,6 +336,52 @@ static const OpCode ops89[OPS] = {
 { UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },
 { UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },
 { UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG },{ UNK, I, SIG }
+};
+
+//define registers
+typedef enum register_t {
+	a, b, x, y, s, pc, pg, dt, dpr, ps
+} Register;
+
+#define SIZE_AX		16
+#define SIZE_AL		8
+
+#define SIZE_BX		16
+#define SIZE_BL		8
+
+#define SIZE_XX		16
+#define SIZE_XL		8
+
+#define SIZE_YX		16
+#define SIZE_YL		8
+
+#define SIZE_SX		16
+#define SIZE_SL		8
+
+#define SIZE_DT		8
+
+#define SIZE_PG		8
+#define SIZE_PCH	8
+#define	SIZE_PCL	8
+#define SIZE_PCR	SIZE_PG + SIZE_PCH + SIZE_PCL
+
+#define SIZE_DPRX	16
+#define SIZE_DPRL	8
+
+#define SIZE_PSX	16
+#define SIZE_PSL	8
+
+struct PS { // PS register, w/ flag bits
+
+	     char IPL = 0x0000; // processor interrupt priority level - 3 bit
+	     bool N = 0; // negative flag
+	     bool V = 0; // overflow flag
+	     bool m = 0; // data length flag
+	     bool x = 0; // index register length flag
+	     bool D = 0; // decimal mode flag
+	     bool I = 0; // interrupt disable flag
+	     bool Z = 0; // zero flag
+	     bool C = 0;  // carry flag
 };
 
 static ut8 read_8(const ut8* data, unsigned int offset);
