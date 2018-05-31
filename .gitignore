@@ -6,6 +6,8 @@
 .vs/r2-m7700/v15/.suo
 *.sln
 *.vcxproj
+*.vs
+*.vscode
 *.filters
 *.user
 *.obj
