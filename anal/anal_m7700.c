@@ -5,8 +5,9 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-#include "../asm/asm_m7700.c"
-#include "m7700_parser.c"
+//#include "../asm/asm_m7700.c"
+#include "arch/m7700.c"
+//#include "m7700_parser.c"
 
 static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 
@@ -17,13 +18,36 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		Figure out how to handle the m and x flags for the device
 	
 	*/
-
+	OpCode* opcd;
 	memset(op, 0, sizeof(RAnalOp));
-	const ut8 instruction = read_8(data, 0); // grab the instruction from the r_asm method
-	OpCode * opcd = GET_OPCODE(instruction, instruction);
+	ut8 instruction = read_8(data, 0); // grab the instruction from the r_asm method
+//	instruction = read_8(data, 0); // grab instruction from buffer, with offset of 0
+
+	// pull the prefix of the instruction off, grabing from the tables corresponding to the addressing mode
+	switch (instruction){
+		// first two cases, remove prefix - otherwise just pass instruction
+		case 0x42: // x42 prefix - 
+	//		sprintf(dest, "b"); // b reg prefix;
+			instruction = read_8(data, 1); // grab next instruction from buffer, with offset of 1
+			opcd = GET_OPCODE (instruction, 0x42); // grab opcode from instruction
+			op->size++;
+			//a->pc++;
+			break;
+		case 0x89: // x89 prefix  -
+			
+			instruction = read_8(data, 1); // grab next instruction from buffer, with offset of 1
+			opcd = GET_OPCODE (instruction, 0x89); // grab opcode from instruction
+			op->size++; 
+			//a->pc++;
+			break;
+		default:   // other prefixes
+	//		sprintf(dest, "a");
+			opcd = GET_OPCODE (instruction, 0x00); // grab opcode from instruction
+			break;
+	}
 
 	op->addr = addr;
-	op->size = 4;
+	op->size = 1;
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->eob = false;
 
@@ -31,10 +55,23 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	
 		// load instructions
 		case LDA: // load to accumulator
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
 		case LDM: // load to memory
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
 		case LDT: // load to data bank reg
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
 		case LDX: // load to index reg X
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
 		case LDY: // load to index reg Y
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 
@@ -111,7 +148,6 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	}
 	
 	return op->size;
-
 }
 
 struct r_anal_plugin_t r_anal_plugin_m7700 = {
