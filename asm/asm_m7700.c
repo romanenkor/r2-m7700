@@ -1,7 +1,8 @@
 #include <string.h>
 #include <r_asm.h>
 #include <r_lib.h>
-#include "arch/m7700.c"
+#include "./arch/m7700.c"
+//#include "./arch/m7700.h"
 
 /* Main disassembly func */
 static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
@@ -43,7 +44,6 @@ int main(int argc, char **argv) {
 	return 0;
 }
 #endif	// MAIN_ASM
-
 
 /* Structure of exported functions/data (used in R2) */
 RAsmPlugin r_asm_plugin_m7700 = {

@@ -5,8 +5,8 @@
 #include <r_lib.h>
 #include <r_asm.h>
 #include <r_anal.h>
-//#include "../asm/asm_m7700.c"
-#include "arch/m7700.c"
+#include "../asm/asm_m7700.c"
+//#include "../asm/arch/m7700.c"
 //#include "m7700_parser.c"
 
 static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
@@ -14,14 +14,15 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	if (op == NULL)
 		return 0;
 
-	/* TODO: fully implement opcodes for the whole lib 
-		Figure out how to handle the m and x flags for the device
-	
-	*/
+ 	r_strbuf_init (&op->esil); 
 	OpCode* opcd;
 	memset(op, 0, sizeof(RAnalOp));
 	ut8 instruction = read_8(data, 0); // grab the instruction from the r_asm method
-//	instruction = read_8(data, 0); // grab instruction from buffer, with offset of 0
+
+	op->addr = addr;
+	op->size = 1;
+	op->type = R_ANAL_OP_TYPE_UNK;
+	op->eob = false;
 
 	// pull the prefix of the instruction off, grabing from the tables corresponding to the addressing mode
 	switch (instruction){
@@ -46,28 +47,23 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 	}
 
-	op->addr = addr;
-	op->size = 1;
-	op->type = R_ANAL_OP_TYPE_UNK;
-	op->eob = false;
-
 	switch (opcd->op) {
 	
 		// load instructions
 		case LDA: // load to accumulator
-			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "A");
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDM: // load to memory
-			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "0x6000");
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDT: // load to data bank reg
-			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "DB");
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDX: // load to index reg X
-			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "X");
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDY: // load to index reg Y
