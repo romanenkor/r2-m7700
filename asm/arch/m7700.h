@@ -53,7 +53,7 @@ enum
 	SBCB, EORB, TBX, CMPB, INB, DEB, TXB, TYB, LSRB, ORB, CLB,
 	BBC, BBS, TBY, ANDB, PUL, PSH, PLAB, XAB, PHB, TBS, TBD,
 	TDB
-} op;
+};
 
 // addressing mode bits
 enum

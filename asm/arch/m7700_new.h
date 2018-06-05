@@ -339,6 +339,10 @@ static const OpCode ops89[OPS] = {
 };
 
 //define registers
+static const char* register_label[] = {
+	{"a"}, {"b"}, {"x"}, {"y"}, {"s"}, {"pc"}, {"pg"}, {"dt"}, {"dpr"}, {"ps"}
+};
+
 typedef enum register_t {
 	a, b, x, y, s, pc, pg, dt, dpr, ps
 } Register;
