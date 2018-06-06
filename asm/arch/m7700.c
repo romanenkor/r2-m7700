@@ -36,7 +36,6 @@ char* int_8_str(unsigned int val)
    return str;
 }
 
-
 /*
 	Reads args from the opcode prefix arrays in the header, based off of prefix
 
@@ -137,6 +136,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 // below occasonally causes segfault for some reason
 	case RELB :
 		//op->size++;
+		
 		sprintf(arg, "0x%04x", (1 + a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		op->size++;
 		break;

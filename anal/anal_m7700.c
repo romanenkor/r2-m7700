@@ -29,6 +29,12 @@ static int reg_write(RAnalEsil *esil, const char *regname, ut64 num) {
 	return 0;
 }
 
+//  return the current value of a status flag
+static ut16 read_flag_value(const char* flag_name, RAnal *anal){
+	
+  return r_reg_get_value(anal->reg, r_reg_get(anal->reg, flag_name, -1));
+}
+
 static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 
 	if (op == NULL)
@@ -37,6 +43,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
  	r_strbuf_init (&op->esil); 
 	OpCode* opcd;
 	memset(op, 0, sizeof(RAnalOp));
+	ut16 flag = 0x0;
 
 	ut8 instruction = read_8(data, 0); // grab the instruction from the r_asm method
 	// pull the prefix of the instruction off, grabing from the tables corresponding to the addressing mode
@@ -82,11 +89,70 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 	switch (opcd->op) {
 	
+		// flag manipulation instructions
+		case SEM:
+			//m
+			r_strbuf_setf(&op->esil, "m,1,=");
+			op->type = R_ANAL_OP_TYPE_COND;
+
+			break;
+		case CLM: 
+			//m
+			r_strbuf_setf(&op->esil, "m,0,=");
+			op->type = R_ANAL_OP_TYPE_COND;
+			break;
+
+		// Carry flag mutators
+		case SEC:
+			//ix
+			r_strbuf_setf(&op->esil, "ix,1,=");
+			op->type = R_ANAL_OP_TYPE_COND;
+			break;
+
+		case CLC:
+			//ix
+			r_strbuf_setf(&op->esil, "ix,0,=");
+			op->type = R_ANAL_OP_TYPE_COND;
+			break;
+
+		// I flag mutators
+		case SEI: 
+			// id
+			r_strbuf_setf(&op->esil, "id,1,=");
+			op->type = R_ANAL_OP_TYPE_COND;
+			break;
+
+		case CLI :
+			// id
+			r_strbuf_setf(&op->esil, "id,0,=");
+			op->type = R_ANAL_OP_TYPE_COND;
+			break;
+
 		// load instructions
-		case LDA: // load to accumulator
-			//r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "A");
+		case LDA: // load to accumulator A
+			//op1 = read_16(data, op->size);
+			//  return the current value of a status flag
+
+			flag = read_flag_value("ix", anal);
+
+			if (flag == 0) {// do shorter eval
+				op1 = read_8(&data, op->size);
+				r_strbuf_setf(&op->esil, "ax,[],%s,=", op1); // first do calc for ix being unset
+			} else {
+				op1 = read_16(&data, op->size);
+				r_strbuf_setf(&op->esil, "al,[],%s,=", op1); // then do calc for ix being set
+			}
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
+		case LDB: 			
+			//op1 = read_16(data, op->size);
+			op1 = "0x1234";
+			r_strbuf_setf(&op->esil, "bx,[],%s,=,}", op1); // first do calc for ix being unset
+			r_strbuf_setf(&op->esil, "ix,?{,bl,[],%s,=,}", op1); // then do calc for ix being set
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			
+			//r_strbuf_setf(&op->esil, "%#0x%04x,[],%s,=", "DICKS", "bx");
+			op->type = R_ANAL_OP_TYPE_LOAD;
 		case LDM: // load to memory
 			//r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "0x6000");
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -186,30 +252,37 @@ static int set_reg_profile_7700(RAnal *anal) {
 		"=SP	s\n"
 		"=ZF	zf\n"
 		"=OF	v\n"
-		"=NF	n\n"
-		"gpr	pc	.24 0	0\n" // program counter
-		"gpr	pg	.8  16	0\n"  // program bank register, high 8 bits of PC
+//		"=NF	n\n"
+		"gpr	pc	.16 0	0\n" // program counter
 		"gpr	pch	.8  8	0\n"  // high bits for program counter 
-		"gpr	pcl	.8  0	0\n"  // low bits for program counter 
+		"gpr	pcl	.8  0	0\n"  // low bits for program counter
+		"gpr	pg	.8  16	0\n"  // program bank register, high 8 bits of PC
+ 
 		"gpr	s	.16 24	0\n" // stack pointer
+
 		"gpr	ax	.16 40	0\n" // accumulator A
 		//"gpr    ah      .8  8  0\n"  // high 8 bits of A - remains unchanged when M flag set
 		"gpr	al	.8  40	0\n"  // low 8 bits of A
+
 		"gpr	bx	.16 56	0\n" // accumulator B
 		//"gpr    bh      .8  8  0\n"  // high 8 bits of B
 		"gpr	bl	.8  56	0\n"  // low 8 bits of B
+
 		"gpr	x	.16  72	0\n"  // index register X 
 		"gpr	xl	.8  72	0\n"  // low bits for index register X - active when X flag set		
+
 		"gpr	y	.16  88	0\n"  // index register Y 
 		"gpr	yl	.8  88	0\n"  // low bits for index register Y - active when X flag set
+
 		"gpr	db	.8	96	0\n"  // data bank register
 		"gpr	dpr	.16	104	0\n"  // direct page register
+
 		"gpr	ps	.8	120	0\n"  // processor status register
 		"flg	cf	.1	127	0\n"  // carry flag - bit 0 of PS
 		"flg	zf	.1	126	0\n"  // zero flag - bit 1 of PS
 		"flg	id	.1	125	0\n"  // interrupt disable flag - bit 2
 		"flg	dm	.1	124	0\n"  // decimal mode flag - bit 3
-		"flg	x	.1	123	0\n"  // index register length flag - bit 4
+		"flg	ix	.1	123	0\n"  // index register length flag - bit 4
 		"flg	m	.1	122	0\n"  // data length flag - bit 5
 		"flg	v	.1	121	0\n"  // overflow flag	- bit 6
 		"flg	n	.1	120	0\n"  // negative flag - bit 7
