@@ -92,39 +92,39 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		// flag manipulation instructions
 		case SEM:
 			//m
-			r_strbuf_setf(&op->esil, "m,1,=");
+			//r_strbuf_setf(&op->esil, "m,1,=");
 			op->type = R_ANAL_OP_TYPE_COND;
 
 			break;
 		case CLM: 
 			//m
-			r_strbuf_setf(&op->esil, "m,0,=");
+			//r_strbuf_setf(&op->esil, "m,0,=");
 			op->type = R_ANAL_OP_TYPE_COND;
 			break;
 
 		// Carry flag mutators
 		case SEC:
 			//ix
-			r_strbuf_setf(&op->esil, "ix,1,=");
+			//r_strbuf_setf(&op->esil, "ix,1,=");
 			op->type = R_ANAL_OP_TYPE_COND;
 			break;
 
 		case CLC:
 			//ix
-			r_strbuf_setf(&op->esil, "ix,0,=");
+			//r_strbuf_setf(&op->esil, "ix,0,=");
 			op->type = R_ANAL_OP_TYPE_COND;
 			break;
 
 		// I flag mutators
 		case SEI: 
 			// id
-			r_strbuf_setf(&op->esil, "id,1,=");
+			//r_strbuf_setf(&op->esil, "id,1,=");
 			op->type = R_ANAL_OP_TYPE_COND;
 			break;
 
 		case CLI :
 			// id
-			r_strbuf_setf(&op->esil, "id,0,=");
+			//r_strbuf_setf(&op->esil, "id,0,=");
 			op->type = R_ANAL_OP_TYPE_COND;
 			break;
 
@@ -137,18 +137,18 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 			if (flag == 0) {// do shorter eval
 				op1 = read_8(&data, op->size);
-				r_strbuf_setf(&op->esil, "ax,[],%s,=", op1); // first do calc for ix being unset
+		//		r_strbuf_setf(&op->esil, "ax,[],%s,=", op1); // first do calc for ix being unset
 			} else {
 				op1 = read_16(&data, op->size);
-				r_strbuf_setf(&op->esil, "al,[],%s,=", op1); // then do calc for ix being set
+		//		r_strbuf_setf(&op->esil, "al,[],%s,=", op1); // then do calc for ix being set
 			}
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDB: 			
 			//op1 = read_16(data, op->size);
 			op1 = "0x1234";
-			r_strbuf_setf(&op->esil, "bx,[],%s,=,}", op1); // first do calc for ix being unset
-			r_strbuf_setf(&op->esil, "ix,?{,bl,[],%s,=,}", op1); // then do calc for ix being set
+		//	r_strbuf_setf(&op->esil, "bx,[],%s,=,}", op1); // first do calc for ix being unset
+		//	r_strbuf_setf(&op->esil, "ix,?{,bl,[],%s,=,}", op1); // then do calc for ix being set
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			
 			//r_strbuf_setf(&op->esil, "%#0x%04x,[],%s,=", "DICKS", "bx");
