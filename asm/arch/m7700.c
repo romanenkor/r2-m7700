@@ -554,11 +554,31 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	char* vars = strtok(parse_args(opcd, op, buf, prefix, GLOB_X && opcd->flag == X, GLOB_M && opcd->flag == M, a), ",");
 	
 
-	for (int i = (vars[0] - '0'); i > 0; i--) {
+//	for (int i = (vars[0] - '0'); i > 0; i--) {
 //		strcat(arg, " ");
 //		strcat(arg, vars[i]);
-		sprintf(arg, vars);
-	}
+//		sprintf(arg, vars);
+//	}
+
+	vars = vars+2;
+	int i = 0;
+
+  	while (vars != NULL)
+  	{
+		if (i > 1){
+			strcat (arg, " ");
+    		strcat (arg, vars);
+    		vars = strtok (NULL, " ,.-");
+	  	}
+		else if (i == 1) {
+    		strcat (arg, vars);
+    		vars = strtok (NULL, " ,.-");
+		}
+		else {
+			vars = strtok (NULL, " ,.-");
+		}
+		i++;
+  	}
 
 	op->buf_inc += op->size;
 
