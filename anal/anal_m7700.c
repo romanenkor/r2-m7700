@@ -178,6 +178,9 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 
+		case CMP:
+			op->type = R_ANAL_OP_TYPE_;
+
 		// transfer instructions
 		case TAX: // transfers A's contents -> X
 		case TXA: // X -> A

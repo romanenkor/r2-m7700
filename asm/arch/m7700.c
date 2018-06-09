@@ -48,7 +48,7 @@ static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 
 static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool flag_x, bool flag_m, RAsm* a){
 
-	char* args = (char*)(malloc(sizeof(char*)* 30));	
+	char* args = (char*)(malloc(sizeof(char*) * 30));	// alloc bufspace
 
 	switch (opcd->arg) {
 
@@ -67,7 +67,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			}
 			break;
 		case ACCB :
-			if (flag_x){
+			if (!flag_x){
 
 				sprintf(args, "1,bl\0");
 			} else {
@@ -79,19 +79,19 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		// below occasonally causes segfault for some reason
 		case RELB :
 			op->size++;
-			sprintf(args, "1,0x%04x\0", (1 + a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			sprintf(args, "1,0x%04x\0", (a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case RELW :
 		case PER : 
 			op->size+=2;
-			sprintf(args, "1,0x%06x\0", (1 + a->pc + op->size + read_16(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			sprintf(args, "1,0x%06x\0", (a->pc + op->size + read_16(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case IMM : // immediate addressing - format: acc val
 
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-			if (!(flag_m) || !(flag_x)) {
+			if ((flag_m) || (flag_x)) {
 				if (prefix == 42)//b
 					sprintf(args, "2,bx,#0x%04x\0", read_16(buf, op->size));			
 				else			 //a
@@ -109,7 +109,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case BBCD :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-			if (!flag_m || !flag_x){ //larger flags asserted
+			if (flag_m || flag_x){ //larger flags asserted
 				op->size += 4;
 				sprintf(args, "3,#0x%04x,0x%02x,%06x\0", read_16(buf, 2), read_8(buf, 1), (a->pc + op->size + read_8(buf, 4)));
 				//op->size += 4;
@@ -122,7 +122,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case BBCA :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-			if (!flag_m || !flag_x) { // larger
+			if (flag_m || flag_x) { // larger
 				op->size += 5;
 				sprintf(args, "3,#$%04x,$04x,%06x\0", read_16(buf, 3), read_16(buf, 1), (a->pc + op->size + read_8(buf, 5)));
 			}
@@ -133,7 +133,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 
 		case LDM4 :
-			if (!flag_m || !flag_x) {
+			if (flag_m || flag_x) {
 				sprintf(args, "2,#$%04x,$04x\0", read_16(buf, 3), read_16(buf, 1));
 				op->size += 3;
 			}
@@ -144,7 +144,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 		
 		case LDM5 :
-			if (!flag_m || !flag_x) {
+			if (flag_m || flag_x) {
 				sprintf(args, "2,#$%04x,$04x\0", read_16(buf, 2), read_16(buf, 1));
 				op->size += 4;
 			}
@@ -155,7 +155,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 
 		case LDM4X : 
-			if (!flag_m || !flag_x) {
+			if (flag_m || flag_x) {
 				sprintf(args, "3,#$%04x,$02x,xl\0", read_16(buf, 2), read_8(buf, 1));
 				op->size += 3;
 			}
@@ -165,7 +165,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			}
 		break;
 		case LDM5X : 		
-			if (!flag_m || !flag_x) {
+			if (flag_m || flag_x) {
 				sprintf(args, "3,#$%04x,$04x,xl\0", read_16(buf, 3), read_16(buf, 1));
 				op->size += 4;
 			}
@@ -245,22 +245,22 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			sprintf(args, "2,%s,s\0", int_8_str(read_8(buf, 1)));
 			op->size++;
 		break;
-	case SIY : 
-		sprintf(args, "3,%s,S,yl\0", int_8_str(read_8(buf, 1)));
-		op->size++;
+		case SIY : 
+			sprintf(args, "3,%s,S,yl\0", int_8_str(read_8(buf, 1)));
+			op->size++;
 		break;
-	case SIG : 
-		sprintf(args, "1,$%02x\0", read_8(buf, 1));
-		op->size += 2;
+		case SIG : 
+			sprintf(args, "1,$%02x\0", read_8(buf, 1));
+			op->size += 2;
 		break;
 
-	case MVN :
-	case MVP :
-		sprintf(args, "2,$%02x,$%02x\0", read_8(buf, 2), read_8(buf, 1));
-		op->size += 2;
+		case MVN :
+		case MVP :
+			sprintf(args, "2,$%02x,$%02x\0", read_8(buf, 2), read_8(buf, 1));
+			op->size += 2;
 		break;	
-	default:
-		break;
+		default:
+			break;
 	}
 
 	return args;
@@ -292,13 +292,11 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			opcd = GET_OPCODE (instruction, 0x42); // grab opcode from instruction
 			op->size++;
 			prefix = 42;
-			//a->pc++;
 			break;
 		case 0x89: // x89 prefix  -
 			instruction = read_8(buf, 1); // grab next instruction from buffer, with offset of 1
 			opcd = GET_OPCODE (instruction, 0x89); // grab opcode from instruction
 			op->size++; 
-			//a->pc++;
 			prefix = 89;
 			break;
 		default:   // other prefixes
@@ -551,16 +549,9 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	}
 */
 		
-	char* vars = strtok(parse_args(opcd, op, buf, prefix, GLOB_X && opcd->flag == X, GLOB_M && opcd->flag == M, a), ",");
+	char* vars = strtok(parse_args(opcd, op, buf, prefix, !GLOB_X && (opcd->flag == X), !GLOB_M && (opcd->flag == M), a), ",");
 	
-
-//	for (int i = (vars[0] - '0'); i > 0; i--) {
-//		strcat(arg, " ");
-//		strcat(arg, vars[i]);
-//		sprintf(arg, vars);
-//	}
-
-	vars = vars+2;
+	vars = vars+2; // drop leading argno and space
 	int i = 0;
 
   	while (vars != NULL)
