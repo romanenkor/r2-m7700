@@ -48,44 +48,44 @@ static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 
 static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool flag_x, bool flag_m, RAsm* a){
 
-	char* args = (char*)(malloc(sizeof(char*) * 30));	// alloc bufspace
+	char* args = (char*)(malloc(sizeof(char*) * 60));	// alloc bufspace
 
 	switch (opcd->arg) {
 
 		case IMP : // implied addressing mode - single instruction addressed to int. register
-			sprintf(args, "0\0");
+			sprintf(args, "0");
 			break;
 
 	// accumulator register used
 		case ACC :
 			if (flag_x){
 
-				sprintf(args, "1,al\0");
+				sprintf(args, "1,al");
 			} else {
 
-				sprintf(args, "1,ax\0");
+				sprintf(args, "1,ax");
 			}
 			break;
 		case ACCB :
 			if (!flag_x){
 
-				sprintf(args, "1,bl\0");
+				sprintf(args, "1,bl");
 			} else {
 
-				sprintf(args, "1,bx\0");
+				sprintf(args, "1,bx");
 			}
 			break;
 
 		// below occasonally causes segfault for some reason
 		case RELB :
 			op->size++;
-			sprintf(args, "1,0x%04x\0", (a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			sprintf(args, "1,0x%04x", (a->pc + op->size + read_8(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case RELW :
 		case PER : 
 			op->size+=2;
-			sprintf(args, "1,0x%06x\0", (a->pc + op->size + read_16(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			sprintf(args, "1,0x%06x", (a->pc + op->size + read_16(buf, 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case IMM : // immediate addressing - format: acc val
@@ -93,16 +93,16 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if ((flag_m) || (flag_x)) {
 				if (prefix == 42)//b
-					sprintf(args, "2,bx,#0x%04x\0", read_16(buf, op->size));			
+					sprintf(args, "2,bx,#0x%04x", read_16(buf, op->size));			
 				else			 //a
-					sprintf(args, "2,ax,#0x%04x\0", read_16(buf, op->size));			
+					sprintf(args, "2,ax,#0x%04x", read_16(buf, op->size));			
 				op->size += 2;
 			}
 			else { // smaller instruction/params
 				if (prefix == 42)//b
-					sprintf(args, "2,bl,#0x%02x\0", read_8(buf, op->size));			
+					sprintf(args, "2,bl,#0x%02x", read_8(buf, op->size));			
 				else			 //a
-					sprintf(args, "2,al,#0x%02x\0", read_8(buf, op->size));			
+					sprintf(args, "2,al,#0x%02x", read_8(buf, op->size));			
 				op->size++;
 			}
 		break;
@@ -578,5 +578,6 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
         strcat (op->buf_asm, arg);
     }
 
+	free(vars);
 	return op->size;
 }
