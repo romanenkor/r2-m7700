@@ -313,11 +313,12 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	char ops[5][20]; // allocate 5 20 char arrays
 
 	int i = 0; while (vars != NULL)	{
-    	strcpy (ops[i], vars);
+    	strcpy (vars, ops[i]);
     	vars = strtok (NULL, " ,.-");
 		i++;
+		printf("i: %d, ops: %s\n", i, ops[i]);
   	}
-
+	unsigned char* buf;
 	free (vars);
 	
 	switch (opcd->op) {
@@ -476,8 +477,11 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		
 		// branch instructions
 		case BRA: // branch ALWAYS
-			op->jump = op->addr + ops[1]; // grab op conditional
-			r_strbuf_setf(&op->esil, "%c,pc,=", op->jump);// restore stack pointer
+
+			op->jump = r_num_get (NULL, (const char *)ops[1]); // grab op conditional			
+			r_strbuf_setf(&op->esil, "%d,pc,=", op->jump);// restore stack pointer
+			op->type = R_ANAL_OP_TYPE_JMP;
+			break;
 
 		case BBC: // branch on bit clear 
 		case BBS: // branch on bit set
@@ -489,41 +493,52 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case BMI: // branch if negative flag set
 		case BVC: // branch if overflow flag clear
 		case BVS: // branch if overflow flag set
+					
+			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
-			op->jump = op->addr + ops[1]; // grab op conditional 
+			op->jump = ops[1];//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
+			op->fail = addr + op->size;
+
 			break;
 		case JSR: // save current address in stack, jump to subroutine
-		;
-			char* buf;
-			r_reg_read_regs("pc", buf, anal);
-			r_stack_push(stack, buf); // push PC to stack
-			op->jump = ops[1];
+		
+			op->jump = ops[1];//r_num_get (NULL, (const char *)ops[1]);;
+			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
+			op->fail = addr + op->size;
+
+			break;
 		case JMP: // jump to new address via program counter
 			op->type = R_ANAL_OP_TYPE_JMP;
-			op->jump = ops[1];
+			op->jump = r_num_get (NULL, (const char *)ops[1]);
+			op->fail = addr + op->size;
+
+			break;
 		case RTI: // return from interrupt
 		case RTL: // return from subroutine long, restore program bank contents
 		case RTS: // return from subroutine, do not restore program bank contents
-				;
-				unsigned char ra;
-				ra = (unsigned char) (r_stack_peek(stack)); // get_M(S+2, S+1); // get return address from stack
-				op->jump = ra;
-				r_stack_pop(stack); // pop off return address from stack
-				// get 2 addresses from stack, next two up
-				r_strbuf_setf(&op->esil, "%c,pc,=", ra);// restore stack pointer
+
+			// get 2 addresses from stack, next two up
+			r_strbuf_setf(&op->esil,"2,s,-=,s,[2],pc,=");
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->eob = true;
 			
 			// find the prefix89 instruction corresponding to this op
 			break;
+
 		case BRK: // execute software interrupt
+			
+		
+			r_strbuf_setf(&op->esil,"1,id,=,%02x,$$,+,s,=[2],2,s,+=,%s,pc,=",op->size, ops[1]);
+			// the above ESIL does the following
+			// - sets the ID flag bit to 1, disabling interrupts
+			// - takes the program address size, and the PC, adds them together, then loads it to the stack
+			// - sets the program counter to the first operand from the instruction
 
-			char* buf;
-			r_reg_read_regs("pc", buf, anal);
-			r_stack_push(stack, buf);// push current PC onto stack
-			r_strbuf_setf(&op->esil, "1,id,=");// enable interrupt disable flag
-
+			op->jump = r_num_get (NULL, (const char *)ops[1]);
+		
 			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->fail = addr + op->size;
+			
 			break;
 		case NOP:
 			op->type = R_ANAL_OP_TYPE_NOP;
@@ -592,7 +607,6 @@ static int esil_m7700_fini (RAnalEsil *esil) {
 	stack = r_stack_new(8);
   	return true;
 }
-
 
 struct r_anal_plugin_t r_anal_plugin_m7700 = {
 	.name = "m7700",
