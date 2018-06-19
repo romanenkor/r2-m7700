@@ -39,7 +39,7 @@ static ut16 read_flag_value(const char* flag_name, RAnal *anal){
 
 
 
-static char* parse_anal_args(OpCode *opcd, RAnalOp *op, ut8 *buf, int prefix, bool flag_x, bool flag_m, RAnal* a, ut64 addr){
+static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf, int prefix, bool flag_x, bool flag_m, RAnal* a, ut64 addr){
 
 	char* args = (char*)(malloc(sizeof(char*) * 60));	// alloc bufspace
 
@@ -307,20 +307,21 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	RReg *reg = anal->reg;
 
 	char* vars = parse_anal_args(opcd, op, data, prefix, read_flag_value("ix", anal), read_flag_value("m", anal), anal, addr);
+	vars = strtok(vars, " ,.-");
 
 	int num_ops = (int) (vars[0] - '0');
 
 	char ops[5][20]; // allocate 5 20 char arrays
 
 	int i = 0; while (vars != NULL)	{
-    	strcpy (vars, ops[i]);
+    	strcpy (ops[i], (const char*) vars);
     	vars = strtok (NULL, " ,.-");
 		i++;
-		printf("i: %d, ops: %s\n", i, ops[i]);
   	}
+
 	unsigned char* buf;
 	free (vars);
-	
+
 	switch (opcd->op) {
 	
 		// flag manipulation instructions
@@ -488,37 +489,50 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case BCC: // branch on carry clear
 		case BCS: // branch if carry is set
 		case BNE: // branch if zero flag clear
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
+			op->fail = addr + op->size;
+			r_strbuf_setf(&op->esil,"zf,!,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			break;
 		case BEQ: // branch if zero flag set
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
+			op->fail = addr + op->size;
+			r_strbuf_setf(&op->esil,"zf,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			break;
 		case BPL: // branch if negative flag clear
 		case BMI: // branch if negative flag set
-		case BVC: // branch if overflow flag clear
+		case BVC: // branch if overflow flag clear			
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
+			op->fail = addr + op->size;
+			r_strbuf_setf(&op->esil,"v,!,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			break;
 		case BVS: // branch if overflow flag set
-					
 			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
-			op->jump = ops[1];//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
+			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-
+			r_strbuf_setf(&op->esil,"v,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
 			break;
 		case JSR: // save current address in stack, jump to subroutine
-		
-			op->jump = ops[1];//r_num_get (NULL, (const char *)ops[1]);;
+			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);;
 			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
 			op->fail = addr + op->size;
-
 			break;
 		case JMP: // jump to new address via program counter
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = r_num_get (NULL, (const char *)ops[1]);
 			op->fail = addr + op->size;
-
 			break;
 		case RTI: // return from interrupt
 		case RTL: // return from subroutine long, restore program bank contents
 		case RTS: // return from subroutine, do not restore program bank contents
 
-			// get 2 addresses from stack, next two up
 			r_strbuf_setf(&op->esil,"2,s,-=,s,[2],pc,=");
+			// this esil does the following
+			// decrements stack pointer by 2
+			// assigns the PC to the 2 bit value from the stack
 			op->type = R_ANAL_OP_TYPE_RET;
 			op->eob = true;
 			
@@ -526,7 +540,6 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BRK: // execute software interrupt
-			
 		
 			r_strbuf_setf(&op->esil,"1,id,=,%02x,$$,+,s,=[2],2,s,+=,%s,pc,=",op->size, ops[1]);
 			// the above ESIL does the following
