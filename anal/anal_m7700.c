@@ -405,7 +405,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 		// mathematical instructions
 		case CMP:
-			r_strbuf_setf (&op->esil, "ax,%s,[],-",ops[1]);
+			r_strbuf_setf (&op->esil, "%s,%s,[],-",ops[1], ops[2]);
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
 
@@ -421,22 +421,22 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 		case MPY: //multiply (UNSIGNED)
 			op->type = R_ANAL_OP_TYPE_MUL;
-			r_strbuf_setf (&op->esil, "ax,%s,[],*,ax,=",ops[1]);
+			r_strbuf_setf (&op->esil, "ax,%s,[],*,ax,=", ops[1]);
 
 			break;
 
 		case MPYS: // multiply (SIGNED)
 			op->type = R_ANAL_OP_TYPE_MUL;
-			r_strbuf_setf (&op->esil, "ax,%s,[],*,ax,=",ops[1]);
+			r_strbuf_setf (&op->esil, "ax,%s,[],*,ax,=", ops[1]);
 			break;
 
 		case AND: // AND, duh.	
-			r_strbuf_setf (&op->esil, "%s,%s,[],&,%s,=",ops[1],ops[2],ops[1]);
+			r_strbuf_setf (&op->esil, "%s,%s,[],&,%s,=", ops[1], ops[2], ops[1]);
 			op->type = R_ANAL_OP_TYPE_AND;
 			break;
 
 		case ORA: // ORA ORA ORA ORA
-			r_strbuf_setf (&op->esil, "%s,%s,[],|,%s,=",ops[1],ops[2],ops[1]);
+			r_strbuf_setf (&op->esil, "%s,%s,[],|,%s,=",ops[1], ops[2], ops[1]);
 			op->type = R_ANAL_OP_TYPE_OR;
 			break;
 
@@ -533,25 +533,25 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"cf,!,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			r_strbuf_setf(&op->esil,"cf,!,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
 			break;
 		case BCS: // branch if carry is set
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"cf,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			r_strbuf_setf(&op->esil,"cf,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
 			break;
 		case BNE: // branch if zero flag clear
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"zf,!,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			r_strbuf_setf(&op->esil,"zf,!,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
 			break;
 		case BEQ: // branch if zero flag set
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"zf,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			r_strbuf_setf(&op->esil,"zf,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
 			break;
 		case BPL: // branch if negative flag clear
 		case BMI: // branch if negative flag set -- have to change implementation of neg flag
@@ -559,14 +559,14 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"v,!,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			r_strbuf_setf(&op->esil,"v,!,?{,2,s,+=,[2],pc,=,%d,pc,=,}", r_num_get (NULL, (const char*) ops[1])); // push PC to stack
 			break;
 		case BVS: // branch if overflow flag set
 			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"v,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
+			r_strbuf_setf(&op->esil,"v,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
 			break;
 		case JSR: // save current address in stack, jump to subroutine
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);;
@@ -595,7 +595,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BRK: // execute software interrupt
-			r_strbuf_setf(&op->esil,"1,id,=,%02x,$$,+,s,=[2],2,s,+=,%s,pc,=",op->size, ops[1]);
+			r_strbuf_setf(&op->esil,"1,id,=,%02x,$$,+,s,=[2],2,s,+=,%d,pc,=",op->size,  r_num_get (NULL, (const char*) ops[1]));
 			// the above ESIL does the following
 			// - sets the ID flag bit to 1, disabling interrupts
 			// - takes the program address size, and the PC, adds them together, then loads it to the stack
@@ -611,8 +611,6 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			r_strbuf_setf(&op->esil, "nop");
 			break;
 	}
-	
-	//free (ops);
 	return op->size;
 }
 
