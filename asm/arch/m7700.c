@@ -58,8 +58,8 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 	// accumulator register used
 		case ACC :
-			if (flag_x){
-
+			if (!flag_x){
+		
 				sprintf(args, "1,al");
 			} else {
 

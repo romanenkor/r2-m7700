@@ -366,19 +366,16 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		// load instructions
 		case LDA: // load to accumulator A
 
-			r_strbuf_setf(&op->esil, "%s,[],%s,=", ops[1], ops[2]); // first do calc for ix being unset
+			r_strbuf_setf(&op->esil, "ix,?{,al,[],%s,=,},ix,!,?{,ax,[],%s,=,},}", ops[2]); // then do calc for ix being set
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDB: 			
 
-		//	r_strbuf_setf(&op->esil, "bx,[],%s,=,}", op1); // first do calc for ix being unset
-		//	r_strbuf_setf(&op->esil, "ix,?{,bl,[],%s,=,}", op1); // then do calc for ix being set
+			r_strbuf_setf(&op->esil, "ix,?{,bl,[],%s,=,},ix,!,?{,bx,[],%s,=,},}", ops[2]); // then do calc for ix being set
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			
-			//r_strbuf_setf(&op->esil, "%#0x%04x,[],%s,=", "DICKS", "bx");
-			op->type = R_ANAL_OP_TYPE_LOAD;
 		case LDM: // load to memory
-			//r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "0x6000");
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", ops[1], ops[2]);
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDT: // load to data bank reg
@@ -386,12 +383,12 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case LDX: // load to index reg X
-			//r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "X");
+			r_strbuf_setf(&op->esil, "ix,?{,xl,[],%s,=,},ix,!,?{,x,[],%s,=,},}", ops[2]); // then do calc for ix being set
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			
 			break;
 		case LDY: // load to index reg Y
-			//r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "Y");
+			r_strbuf_setf(&op->esil, "ix,?{,yl,[],%s,=,},ix,!,?{,y,[],%s,=,},}", ops[2]); // then do calc for ix being set
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 
@@ -572,8 +569,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);;
 			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
 			op->fail = addr + op->size;
-			op->type = R_ANAL_OP_TYPE_TRAP; // conditional jump
-
+			op->type = R_ANAL_OP_TYPE_JMP; // conditional jump
 			break;
 		case JMP: // jump to new address via program counter
 			op->type = R_ANAL_OP_TYPE_JMP;

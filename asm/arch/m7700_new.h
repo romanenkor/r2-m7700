@@ -196,7 +196,7 @@ static const OpCode ops42[OPS] = {
 // 0x40
 { UNK, I, SIG },{ EORB, M, DXI },{ UNK, I, SIG },{ EORB, M, S },
 { UNK, I, SIG },{ EORB, M, D },{ UNK, I, SIG },{ EORB, M, DLI },
-{ PHB, I, IMP },{ EORB, M, IMM },{ LSRB, M, ACC },{ UNK, I, SIG },
+{ PHB, I, IMP },{ EORB, M, IMM },{ LSRB, M, ACCB },{ UNK, I, SIG },
 { UNK, I, SIG },{ EORB, M, A },{ UNK, I, SIG },{ EORB, M, AL },
 // 0x50
 { UNK, I, SIG },{ EORB, M, DIY },{ EORB, M, DI },{ EORB, M, SIY },
@@ -206,7 +206,7 @@ static const OpCode ops42[OPS] = {
 // 0x60
 { UNK, I, SIG },{ ADCB, M, DXI },{ UNK, I, SIG },{ ADCB, M, S },
 { UNK, I, SIG },{ ADCB, M, D },{ UNK, I, SIG },{ ADCB, M, DLI },
-{ PLAB,I, IMP },{ ADCB, M, IMM },{ ROR, M, ACC },{ UNK, I, SIG },
+{ PLAB,I, IMP },{ ADCB, M, IMM },{ ROR, M, ACCB },{ UNK, I, SIG },
 { UNK, I, SIG },{ ADCB, M, A },{ UNK, I, SIG },{ ADCB, M, AL },
 // 0x70
 { UNK, I, SIG },{ ADCB, M, DIY },{ ADCB, M, DI },{ ADCB, M, SIY },
