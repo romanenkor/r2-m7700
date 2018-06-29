@@ -37,8 +37,6 @@ static ut16 read_flag_value(const char* flag_name, RAnal *anal){
   return r_reg_get_value(anal->reg, r_reg_get(anal->reg, flag_name, -1));
 }
 
-
-
 static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf, int prefix, bool flag_x, bool flag_m, RAnal* a, ut64 addr){
 
 	char* args = (char*)(malloc(sizeof(char*) * 60));	// alloc bufspace
@@ -104,12 +102,12 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){ //larger flags asserted
 				op->size += 4;
-				sprintf(args, "3,#0x%04x,0x%02x,%06x\0", read_16(buf, 2), read_8(buf, 1), (addr + op->size + read_8(buf, 4)));
+				sprintf(args, "3,0x%04x,0x%02x,%06x\0", read_16(buf, 2), read_8(buf, 1), (addr + op->size + read_8(buf, 4)));
 				//op->size += 4;
 			}
 			else {// smaller
 				op->size += 3;
-				sprintf(args, "3,#0x%02x,0x%02x,%06x\0", read_8(buf, 2), read_8(buf, 1), (addr + op->size + read_8(buf, 3)));
+				sprintf(args, "3,0x%02x,0x%02x,%06x\0", read_8(buf, 2), read_8(buf, 1), (addr + op->size + read_8(buf, 3)));
 			}
 		break;
 
@@ -117,107 +115,107 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
 				op->size += 5;
-				sprintf(args, "3,#$%04x,$04x,%06x\0", read_16(buf, 3), read_16(buf, 1), (addr + op->size + read_8(buf, 5)));
+				sprintf(args, "3,%04x,%04x,%06x\0", read_16(buf, 3), read_16(buf, 1), (addr + op->size + read_8(buf, 5)));
 			}
 			else { // smaller
 				op->size += 4;
-				sprintf(args, "3,#$%02x,$04x,%06x\0", read_8(buf, 3), read_16(buf, 1), (addr + op->size + read_8(buf, 4)));
+				sprintf(args, "3,%02x,%04x,%06x\0", read_8(buf, 3), read_16(buf, 1), (addr + op->size + read_8(buf, 4)));
 			}
 		break;
 
 		case LDM4 :
 			if (flag_m || flag_x) {
-				sprintf(args, "2,#$%04x,$04x\0", read_16(buf, 3), read_16(buf, 1));
+				sprintf(args, "2,%04x,%04x\0", read_16(buf, 3), read_16(buf, 1));
 				op->size += 3;
 			}
 			else {
-				sprintf(args, "2,#$%02x,$04x\0", read_8(buf, 3), read_16(buf, 1));
+				sprintf(args, "2,%02x,%04x\0", read_8(buf, 3), read_16(buf, 1));
 				op->size += 2;
 			}
 		break;
 		
 		case LDM5 :
 			if (flag_m || flag_x) {
-				sprintf(args, "2,#$%04x,$04x\0", read_16(buf, 2), read_16(buf, 1));
+				sprintf(args, "2,%04x,%04x\0", read_16(buf, 2), read_16(buf, 1));
 				op->size += 4;
 			}
 			else {
-				sprintf(args, "2,#$%04x,$02x\0", read_16(buf, 2), read_8(buf, 1));
+				sprintf(args, "2,%04x,%02x\0", read_16(buf, 2), read_8(buf, 1));
 				op->size += 3;
 			}
 		break;
 
 		case LDM4X : 
 			if (flag_m || flag_x) {
-				sprintf(args, "3,#$%04x,$02x,xl\0", read_16(buf, 2), read_8(buf, 1));
+				sprintf(args, "3,%04x,%02x,xl\0", read_16(buf, 2), read_8(buf, 1));
 				op->size += 3;
 			}
 			else {
-				sprintf(args, "3,#$%02x,$02x,xl\0", read_8(buf, 2), read_8(buf, 1));
+				sprintf(args, "3,%02x,%02x,xl\0", read_8(buf, 2), read_8(buf, 1));
 				op->size += 2;
 			}
 		break;
 		case LDM5X : 		
 			if (flag_m || flag_x) {
-				sprintf(args, "3,#$%04x,$04x,xl\0", read_16(buf, 3), read_16(buf, 1));
+				sprintf(args, "3,%04x,%04x,xl\0", read_16(buf, 3), read_16(buf, 1));
 				op->size += 4;
 			}
 			else {
-				sprintf(args, "3,#$%02x,$04x,xl\0", read_8(buf, 3), read_16(buf, 1));
+				sprintf(args, "3,%02x,04x,xl\0", read_8(buf, 3), read_16(buf, 1));
 				op->size += 3;
 			}
 		break;
 		case A : // accumulator addressing mode
 		case PEA : 
-			sprintf(args, "1,$%04x\0", read_16(buf, 1));
+			sprintf(args, "1,%04x\0", read_16(buf, 1));
 			op->size +=2;
 		break;
 		case AI :
-			sprintf(args, "1,($%04x)\0", read_16(buf, 1));
+			sprintf(args, "1,%04x\0", read_16(buf, 1));
 			op->size +=2;
 		break;
 	
 		case AL :
-			sprintf(args, "1,$%08x\0", read_24(buf, 1)); // might need to be set to 06x
+			sprintf(args, "1,%08x\0", read_24(buf, 1)); // might need to be set to 06x
 			op->size += 3;
 		break;
 	
 		case ALX : 
-			sprintf(args, "2,$%08x,xl\0", read_24(buf, 1));
+			sprintf(args, "2,%08x,xl\0", read_24(buf, 1));
 			op->size += 3;
 		break;
 		case AX :
-			sprintf(args, "2,$%04x,xl\0", read_16(buf, 1));
+			sprintf(args, "2,%04x,xl\0", read_16(buf, 1));
 			op->size += 2;
 		break;
 		case AXI :
-			sprintf(args, "2,$%04x,xl)\0", read_16(buf, 1));
+			sprintf(args, "2,%04x,xl)\0", read_16(buf, 1));
 			op->size += 2;
 		break;
 		case AY :
-			sprintf(args, "2,$%04x,yl\0", read_16(buf, 1));
+			sprintf(args, "2,%04x,yl\0", read_16(buf, 1));
 			op->size += 2;
 		break;
 
 		case D : // direct addressing mode
-			sprintf(args, "1,$%02x\0", read_8(buf, 1));
+			sprintf(args, "1,%02x\0", read_8(buf, 1));
 			op->size++;
 		break;
 		case DI : // direct indirect addressing mode
 		case PEI :
-			sprintf(args, "1,($%02x)\0", read_8(buf, 1));
+			sprintf(args, "1,%02x\0", read_8(buf, 1));
 			op->size++;
 		break;
 		case DIY : // direct indexed Y addressing mode
-			sprintf(args, "2,($%02x),yl\0", read_8(buf, 1));
+			sprintf(args, "2,%02x,yl\0", read_8(buf, 1));
 			op->size++;
 		break;
 		case DLI :
-			sprintf(args, "1,[$%02x]\0", read_8(buf, 1));		
+			sprintf(args, "1,%02x\0", read_8(buf, 1));		
 			op->size++;
 		break;
 		case DLIY :
-			sprintf(args, "1,[$%02x],yl\0", read_8(buf, 1));
+			sprintf(args, "1,%02x,yl\0", read_8(buf, 1));
 			op->size++;
 		break;	
 		case DX :
@@ -363,32 +361,21 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_COND;
 			break;
 
-		// load instructions
+		// load instructions (all kind of the same)
 		case LDA: // load to accumulator A
-
-			r_strbuf_setf(&op->esil, "ix,?{,al,[],%s,=,},ix,!,?{,ax,[],%s,=,},}", ops[2]); // then do calc for ix being set
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			break;
-		case LDB: 			
-
-			r_strbuf_setf(&op->esil, "ix,?{,bl,[],%s,=,},ix,!,?{,bx,[],%s,=,},}", ops[2]); // then do calc for ix being set
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			
-		case LDM: // load to memory
-			r_strbuf_setf(&op->esil, "%s,[],%s,=,", ops[1], ops[2]);
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			break;
-		case LDT: // load to data bank reg
-			//r_strbuf_setf(&op->esil, "%s,[],%s,=,", read_16(data, op->size), "DB");
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			break;
+		case LDB: // load to accumulator B
 		case LDX: // load to index reg X
-			r_strbuf_setf(&op->esil, "ix,?{,xl,[],%s,=,},ix,!,?{,x,[],%s,=,},}", ops[2]); // then do calc for ix being set
-			op->type = R_ANAL_OP_TYPE_LOAD;
-			
-			break;
 		case LDY: // load to index reg Y
-			r_strbuf_setf(&op->esil, "ix,?{,yl,[],%s,=,},ix,!,?{,y,[],%s,=,},}", ops[2]); // then do calc for ix being set
+			// TODO: Implement ESIL for all memory loads, not just acc<-mem
+			r_strbuf_setf(&op->esil, "%s,[],%s,=,", ops[1], ops[2]); // store in accumulator 
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case LDM: // load to memory (immediate)
+			r_strbuf_setf(&op->esil, "%s,%s,[],=,", ops[1], ops[2]);
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
+		case LDT: // load to data bank reg (immediate)
+			r_strbuf_setf(&op->esil, "%s,db,=", ops[1]);
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 
@@ -416,10 +403,9 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_SUB;
 			break;
 
-		case MPY: //multiply (UNSIGNED)
+		case MPY: //multiply (UNSIGNED) - pull from addr, multiply, store in A
 			op->type = R_ANAL_OP_TYPE_MUL;
 			r_strbuf_setf (&op->esil, "ax,%s,[],*,ax,=", ops[1]);
-
 			break;
 
 		case MPYS: // multiply (SIGNED)
@@ -452,7 +438,9 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		
 		case EOR: // XOR - Mem and accumulator A
 		case EORB: // mem and accumulator B
-			r_strbuf_setf (&op->esil, "%s,%s,[],^,%s,=",op[1],op[2],op[1]);
+			r_strbuf_setf (&op->esil, "%s,%s,[],^,%s,=",op[1],op[2],op[1] 
+				// XOR value at Mem address with the specified accumulator, then put in acc.
+			);
 			op->type = R_ANAL_OP_TYPE_XOR;
 			break;
 
@@ -494,23 +482,23 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 		case PSH: // push op to stack
 			op->type = R_ANAL_OP_TYPE_PUSH;
-			r_strbuf_setf(&op->esil,"%s,stk,=[2],2,stk,+=", ops[1]);
+			r_strbuf_setf(&op->esil,"%s,stk,=[2],2,stk,-=", ops[1]);
 			break;
 		case PHB: // push register B to stack
 			op->type = R_ANAL_OP_TYPE_PUSH;
-			r_strbuf_setf(&op->esil,"bl,stk,=[2],2,stk,+=");
+			r_strbuf_setf(&op->esil,"bl,stk,=[2],2,stk,-=");
 			break;
 		case PHA: // push register A to stack
 			op->type = R_ANAL_OP_TYPE_PUSH;
-			r_strbuf_setf(&op->esil,"al,stk,=[2],2,stk,+=");
+			r_strbuf_setf(&op->esil,"al,stk,=[2],2,stk,-=");
 			break;
 		case PLB: // pull register B from stack
 			op->type = R_ANAL_OP_TYPE_POP;
-			r_strbuf_setf(&op->esil,"2,stk,-=,stk,[2],bl,=");
+			r_strbuf_setf(&op->esil,"2,stk,+=,stk,[2],bl,=");
 			break;
 		case PLA: // pull register A from stack
 			op->type = R_ANAL_OP_TYPE_POP;
-			r_strbuf_setf(&op->esil,"2,stk,-=,stk,[2],al,=");
+			r_strbuf_setf(&op->esil,"2,stk,+=,stk,[2],al,=");
 			break;
 
 		case XAB: // swap contents of A and B
@@ -520,43 +508,62 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		// branch instructions
 		case BRA: // branch ALWAYS
 			op->jump = r_num_get (NULL, (const char *)ops[1]); // grab op conditional			
-			r_strbuf_setf(&op->esil, "%d,pc,=", op->jump);// restore stack pointer
+			r_strbuf_setf(&op->esil, "%d,pc,+=,%s,pc,=", op->size, ops[1]);// restore stack pointer
 			op->type = R_ANAL_OP_TYPE_JMP;
 			break;
 
 		case BBC: // branch on bit clear 
 		case BBS: // branch on bit set
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			break;
 		case BCC: // branch on carry clear
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"cf,!,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
+			r_strbuf_setf(&op->esil,"cf,!,?{,\
+											2,s,+=,[2],pc,=,%s,pc,=,\
+										}",
+										ops[1]
+			); // push PC to stack
+
 			break;
 		case BCS: // branch if carry is set
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"cf,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
+			r_strbuf_setf(&op->esil,"cf,?{,\
+											2,s,+=,[2],pc,=,%s,pc,=,\
+										}",  
+										ops[1]
+			); // push PC to stack
 			break;
 		case BNE: // branch if zero flag clear
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"zf,!,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
+			r_strbuf_setf(&op->esil,"zf,!,?{,\
+											2,s,+=,[2],pc,=,%s,pc,=,\
+											}",  ops[1]); // push PC to stack
 			break;
 		case BEQ: // branch if zero flag set
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"zf,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
+			r_strbuf_setf(&op->esil,"zf,?{,\
+											2,s,+=,[2],pc,=,%s,pc,=,\
+											}",  ops[1]); // push PC to stack
 			break;
 		case BPL: // branch if negative flag clear
 		case BMI: // branch if negative flag set -- have to change implementation of neg flag
+			op->type = R_ANAL_OP_TYPE_CJMP;
+			break;
 		case BVC: // branch if overflow flag clear			
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"v,!,?{,2,s,+=,[2],pc,=,%d,pc,=,}", r_num_get (NULL, (const char*) ops[1])); // push PC to stack
+			r_strbuf_setf(&op->esil,"v,!,?{,\
+											2,s,+=,[2],pc,=,%s,pc,=,\
+											}", ops[1]); // push PC to stack
 			break;
 		case BVS: // branch if overflow flag set
 			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
@@ -569,7 +576,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);;
 			r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
 			op->fail = addr + op->size;
-			op->type = R_ANAL_OP_TYPE_JMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CALL; // conditional jump
 			break;
 		case JMP: // jump to new address via program counter
 			op->type = R_ANAL_OP_TYPE_JMP;
@@ -577,26 +584,61 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->fail = addr + op->size;
 			break;
 		case RTI: // return from interrupt
-		case RTL: // return from subroutine long, restore program bank contents
-		case RTS: // return from subroutine, do not restore program bank contents
 
-			r_strbuf_setf(&op->esil,"2,s,-=,s,[2],pc,=");
-			// this esil does the following
-			// decrements stack pointer by 2
+			r_strbuf_setf(&op->esil,
+				"2,s,+=,pc\
+				,s,=[2]"
+				);			// this esil does the following
+			// increments stack pointer by 2
 			// assigns the PC to the 2 bit value from the stack
 			op->type = R_ANAL_OP_TYPE_RET;
+			op->delay = 1;
+			op->eob = true;
+			
+			// find the prefix89 instruction corresponding to this op
+			break;
+		case RTL: // return from subroutine long, restore program bank contents
+			
+			r_strbuf_setf(&op->esil,
+				"2,s,+=,pc\
+				,s,=[2]"
+				);
+			// this esil does the following
+			// increments stack pointer by 2
+			// assigns the PC to the 2 bit value from the stack
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->delay = 1;
+			op->eob = true;
+			
+			// find the prefix89 instruction corresponding to this op
+			break;
+		case RTS: // return from subroutine, do not restore program bank contents
+
+			r_strbuf_setf(&op->esil,
+				"2,s,+=,pc\
+				,s,=[2]"
+				);
+			// this esil does the following
+			// increments stack pointer by 2
+			// assigns the PC to the 2 bit value from the stack
+			op->type = R_ANAL_OP_TYPE_RET;
+			op->delay = 1;
 			op->eob = true;
 			
 			// find the prefix89 instruction corresponding to this op
 			break;
 
 		case BRK: // execute software interrupt
-			r_strbuf_setf(&op->esil,"1,id,=,%02x,$$,+,s,=[2],2,s,+=,%d,pc,=",op->size,  r_num_get (NULL, (const char*) ops[1]));
+			r_strbuf_setf(&op->esil,
+				"1,id,=,\
+				%02x,$$,+,s,=[2],2,s,+=,\
+				%d,pc,=",
+				op->size,  r_num_get (NULL, (const char*) ops[1])
+			);
 			// the above ESIL does the following
 			// - sets the ID flag bit to 1, disabling interrupts
 			// - takes the program address size, and the PC, adds them together, then loads it to the stack
 			// - sets the program counter to the first operand from the instruction
-
 			op->jump = r_num_get (NULL, (const char *)ops[1]);
 			op->type = R_ANAL_OP_TYPE_TRAP;
 			op->fail = addr + op->size;
@@ -607,6 +649,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			r_strbuf_setf(&op->esil, "nop");
 			break;
 	}
+
 	return op->size;
 }
 
