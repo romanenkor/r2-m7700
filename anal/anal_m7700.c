@@ -304,7 +304,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	r_strbuf_init(&op->esil);
 	RReg *reg = anal->reg;
 
-	char* vars = parse_anal_args(opcd, op, data, prefix, read_flag_value("ix", anal), read_flag_value("m", anal), anal, addr);
+	char* vars = parse_anal_args(opcd, op, data, prefix, !read_flag_value("ix", anal) && (opcd->flag == X), !read_flag_value("m", anal) && (opcd->flag == M), anal, addr);
 	vars = strtok(vars, " ,.-");
 
 	int num_ops = (int) (vars[0] - '0');
@@ -510,6 +510,8 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->jump = r_num_get (NULL, (const char *)ops[1]); // grab op conditional			
 			r_strbuf_setf(&op->esil, "%d,pc,+=,%s,pc,=", op->size, ops[1]);// restore stack pointer
 			op->type = R_ANAL_OP_TYPE_JMP;
+			op->fail = addr + op->size;
+
 			break;
 
 		case BBC: // branch on bit clear 
@@ -570,7 +572,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = addr + op->size;
-			r_strbuf_setf(&op->esil,"v,?{,2,s,+=,[2],pc,=,%d,pc,=,}",  r_num_get (NULL, (const char*) ops[1])); // push PC to stack
+			r_strbuf_setf(&op->esil,"v,?{,2,s,+=,[2],pc,=,%s,pc,=,}", ops[1]); // push PC to stack
 			break;
 		case JSR: // save current address in stack, jump to subroutine
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);;
@@ -615,8 +617,8 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case RTS: // return from subroutine, do not restore program bank contents
 
 			r_strbuf_setf(&op->esil,
-				"2,s,+=,pc\
-				,s,=[2]"
+				"s,=[2]\
+				,2,s,+=,pc"
 				);
 			// this esil does the following
 			// increments stack pointer by 2
@@ -632,8 +634,8 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			r_strbuf_setf(&op->esil,
 				"1,id,=,\
 				%02x,$$,+,s,=[2],2,s,+=,\
-				%d,pc,=",
-				op->size,  r_num_get (NULL, (const char*) ops[1])
+				%s,pc,=",
+				op->size, ops[1]
 			);
 			// the above ESIL does the following
 			// - sets the ID flag bit to 1, disabling interrupts
