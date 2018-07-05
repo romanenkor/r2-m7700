@@ -22,3 +22,9 @@
 *.pdb
 *.sqlite
 *.sqlite
+*.dot
+*.pdf
+anal/massive_jsr.png
+anal/massive_jsr.dot
+anal/fcg_full.pdf
+anal/out.dot

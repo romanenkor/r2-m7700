@@ -77,13 +77,13 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		// below occasonally causes segfault for some reason
 		case RELB :
 			op->size++;
-			sprintf(args, "1,0x%04x", (a->pc + op->size + read_8(buf, op->size)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			sprintf(args, "1,0x%02x", (a->pc + op->size + read_8(buf, op->size - 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case RELW :
 		case PER : 
 			op->size+=2;
-			sprintf(args, "1,0x%06x", (a->pc + op->size + read_16(buf, op->size)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			sprintf(args, "1,0x%04x", (a->pc + op->size + read_16(buf, op->size - 2)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case IMM : // immediate addressing - format: acc val
@@ -108,11 +108,11 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		case BBCD :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){ //larger flags asserted
-				sprintf(args, "3,#0x%04x,0x%02x,%06x\0", read_16(buf, op->size+1), read_8(buf, op->size), (a->pc + op->size + read_8(buf, op->size+3)));
+				sprintf(args, "3,#0x%04x,0x%02x,0x%04x\0", read_16(buf, op->size+1), read_8(buf, op->size), (a->pc + op->size + 4 + read_8(buf, op->size+3)));
 				op->size += 4;
 			}
 			else {// smaller
-				sprintf(args, "3,#0x%02x,0x%02x,%06x\0", read_8(buf, op->size+1), read_8(buf, op->size), (a->pc + op->size + read_8(buf, op->size+2)));
+				sprintf(args, "3,#0x%02x,0x%02x,0x%04x\0", read_8(buf, op->size+1), read_8(buf, op->size), (a->pc + op->size + 5 +  read_8(buf, op->size+2)));
 				op->size += 3;
 			}
 		break;
@@ -120,11 +120,11 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		case BBCA :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "3,#$%04x,$04x,%06x\0", read_16(buf, op->size+2), read_16(buf, op->size), (a->pc + op->size + read_8(buf, op->size+4)));
+				sprintf(args, "3,#0x%04x,0x$04x, dp + 0x00 + ix (0x%04x)\0", read_16(buf, op->size+2), read_16(buf, op->size), (a->pc + op->size + 5 + read_8(buf, op->size+4)));
 				op->size += 5;
 			}
 			else { // smaller
-				sprintf(args, "3,#$%02x,$04x,%06x\0", read_8(buf, op->size+2), read_16(buf, op->size), (a->pc + op->size + read_8(buf, op->size+3)));
+				sprintf(args, "3,#0x%02x,0x$04x,dp + 0x00 + ix (0x%04x)\0", read_8(buf, op->size+2), read_16(buf, op->size), (a->pc + op->size + 4 + read_8(buf, op->size+3)));
 				op->size += 4;
 				}
 		break;
@@ -214,7 +214,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			op->size++;
 		break;
 		case DIY : // direct indexed Y addressing mode
-			sprintf(args, "2,($%02x),yl\0", read_8(buf, op->size));
+			sprintf(args, "2,yl,($%02x)\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DLI :
@@ -222,29 +222,29 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			op->size++;
 		break;
 		case DLIY :
-			sprintf(args, "1,[$%02x],yl\0", read_8(buf, op->size));
+			sprintf(args, "1,yl,[$%02x]\0", read_8(buf, op->size));
 			op->size++;
 		break;	
 		case DX :
-			sprintf(args, "1,$%02x,xl\0", read_8(buf, op->size));
+			sprintf(args, "1,xl,$%02x\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DXI :  //direct indexed X addressing mode
-			sprintf(args, "2,($%02x),xl\0", read_8(buf, op->size));
+			sprintf(args, "2,,xl,($%02x)\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DY :
-			sprintf(args, "2,$%02x,yl\0", read_8(buf, op->size));
+			sprintf(args, "2,yl,$%02x\0", read_8(buf, op->size));
 			op->size++;
 		break;
 
 	// causes segfault
 		case S: 
-			sprintf(args, "2,%s,s\0", int_8_str(read_8(buf, op->size)));
+			sprintf(args, "1,%s\0", int_8_str(read_8(buf, op->size)));
 			op->size++;
 		break;
 		case SIY : 
-			sprintf(args, "3,%s,S,yl\0", int_8_str(read_8(buf, op->size)));
+			sprintf(args, "3,yl,%s\0", int_8_str(read_8(buf, op->size)));
 			op->size++;
 		break;
 		case SIG : 
