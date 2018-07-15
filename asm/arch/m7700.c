@@ -49,7 +49,7 @@ static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool flag_x, bool flag_m, RAsm* a){
 
 	char* args = (char*)(malloc(sizeof(char*) * 60));	// alloc bufspace
-
+	
 	switch (opcd->arg) {
 
 		case IMP : // implied addressing mode - single instruction addressed to int. register
@@ -59,6 +59,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 	// accumulator register used
 		case ACC :
 			if (!flag_x){
+
 				sprintf(args, "1,al");
 			} else {
 				sprintf(args, "1,ax");
@@ -89,12 +90,14 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		case IMM : // immediate addressing - format: acc val
 
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-			if ((flag_m) || (flag_x)) {
-				if (prefix == 42)//b
-					sprintf(args, "2,bx,#0x%04x", read_16(buf, op->size));			
-				else			 //a
-					sprintf(args, "2,ax,#0x%04x", read_16(buf, op->size));			
-				op->size += 2;
+			if (flag_m || flag_x) { // larger condition
+				if (prefix == 42)  //b
+					sprintf(args, "2,bx,#0x%04hx", read_16(buf, op->size));		
+				
+				else			    //a 
+					sprintf(args, "2,ax,#0x%04hx", read_16(buf, op->size));	
+				
+				op->size += 2;	
 			}
 			else { // smaller instruction/params
 				if (prefix == 42)//b
@@ -103,77 +106,83 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 					sprintf(args, "2,al,#0x%02x", read_8(buf, op->size));			
 				op->size++;
 			}
+			
 		break;
 
 		case BBCD :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
-			if (flag_m || flag_x){ //larger flags asserted
-				sprintf(args, "3,#0x%04x,0x%02x,0x%04x\0", read_16(buf, op->size+1), read_8(buf, op->size), (a->pc + op->size + 4 + read_8(buf, op->size+3)));
+			if (flag_m || flag_x){ // larger flags asserted	
+				sprintf(args, "3,#0x%04x,0x%02x,0x%04hx\0", read_16(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 5 + read_8(buf, op->size+3)));
 				op->size += 4;
 			}
 			else {// smaller
-				sprintf(args, "3,#0x%02x,0x%02x,0x%04x\0", read_8(buf, op->size+1), read_8(buf, op->size), (a->pc + op->size + 5 +  read_8(buf, op->size+2)));
-				op->size += 3;
+				sprintf(args, "3,#0x%02x,0x%02x,0x%04hx\0", read_8(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 4 +  read_8(buf, op->size+2)));
+				op->size += 3;		
 			}
 		break;
 
 		case BBCA :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "3,#0x%04x,0x$04x, dp + 0x00 + ix (0x%04x)\0", read_16(buf, op->size+2), read_16(buf, op->size), (a->pc + op->size + 5 + read_8(buf, op->size+4)));
+				sprintf(args, "3,#0x%04x,$0x%04x,0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 5)+ (char)read_8(buf, op->size+4)));
 				op->size += 5;
 			}
 			else { // smaller
-				sprintf(args, "3,#0x%02x,0x$04x,dp + 0x00 + ix (0x%04x)\0", read_8(buf, op->size+2), read_16(buf, op->size), (a->pc + op->size + 4 + read_8(buf, op->size+3)));
-				op->size += 4;
-				}
+				sprintf(args, "3,#0x%02x,$0x%04x,0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 4) + (char)read_8(buf, op->size+3)));
+				op->size += 4;		
+			}
+			
 		break;
 
-		case LDM4 :
-			if (flag_m || flag_x) {
-				sprintf(args, "2,#$%04x,$04x\0", read_16(buf, op->size+2), read_16(buf, op->size));
+		case LDM4 : // ldm
+			if (flag_m || flag_x) { // larger
+				sprintf(args, "2,#$%04x,$%04x\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
-			else {
-				sprintf(args, "2,#$%02x,$04x\0", read_8(buf, op->size+2), read_16(buf, op->size));
-				op->size += 3;
+			else { // smaller
+				sprintf(args, "2,#$%02x,$%04x\0", read_8(buf, op->size+2), read_16(buf, op->size));
+				op->size += 3;	
 			}
 		break;
 		
-		case LDM5 :
-			if (flag_m || flag_x) {
-				sprintf(args, "2,#$%04x,$04x\0", read_16(buf, op->size+2), read_16(buf, op->size));
+		case LDM5 : // ldm long
+			if (flag_m || flag_x) { // larger
+				sprintf(args, "2,#$%04x,$%04x\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
-			else {
-				sprintf(args, "2,#$%04x,$02x\0", read_16(buf, op->size+1), read_8(buf, op->size));
+			
+			else { //smaller
+				sprintf(args, "2,#$%04x,$%02x\0", read_16(buf, op->size+1), read_8(buf, op->size));
 				op->size += 3;
 			}
 		break;
 
-		case LDM4X : 
-			if (flag_m || flag_x) {
-				sprintf(args, "3,#$%04x,$02x,xl\0", read_16(buf, op->size+1), read_8(buf, op->size));
+		case LDM4X : // ldm X direct
+			if (flag_m || flag_x) {// larger
+				sprintf(args, "3,#$%04x,$%02x,xl\0", read_16(buf, op->size+1), read_8(buf, op->size));
 				op->size += 3;
 			}
-			else {
-				sprintf(args, "3,#$%02x,$02x,xl\0", read_8(buf, op->size+1), read_8(buf, op->size));
+			else { // smaller
+				sprintf(args, "3,#$%02x,$%02x,xl\0", read_8(buf, op->size+1), read_8(buf, op->size));
 				op->size += 2;
 			}
 		break;
-		case LDM5X : 		
-			if (flag_m || flag_x) {
-				sprintf(args, "3,#$%04x,$04x,xl\0", read_16(buf, op->size+2), read_16(buf, op->size));
+
+		case LDM5X : // ldm x direct long	
+			if (flag_m || flag_x) {// larger
+				sprintf(args, "3,#$%04x,$%04x,xl\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
-			else {
+			else {// smaller
 				sprintf(args, "3,#$%02x,$04x,xl\0", read_8(buf, op->size+2), read_16(buf, op->size));
 				op->size += 3;
 			}
 		break;
+
+		// end LDM specific instructions 
+
 		case A : // accumulator addressing mode
 		case PEA : 
-			// flip the bits
 			sprintf(args, "1,0x%04x\0", read_16(buf, op->size));			
 			op->size +=2;
 		break;
@@ -205,8 +214,27 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 
 		case D : // direct addressing mode
-			sprintf(args, "1,$%02x\0", read_8(buf, op->size));
-			op->size++;
+			if (flag_x){ // larger
+				if (prefix == 42) {
+					sprintf(args, "2,bx,$0x%04x\0", read_16(buf, op->size));
+
+				} else {
+					sprintf(args, "2,ax,$0x%04x\0", read_16(buf, op->size));
+				}
+				op->size+=2;
+
+			} 
+			else {// smaller
+				if (prefix == 42){
+					sprintf(args, "2,bl,$0x%02x\0", read_8(buf, op->size));
+
+				} else {
+					sprintf(args, "2,al,$0x%02x\0", read_8(buf, op->size));
+				}
+				op->size++;
+
+			}
+
 		break;
 		case DI : // direct indirect addressing mode
 		case PEI :
@@ -225,11 +253,12 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			sprintf(args, "1,yl,[$%02x]\0", read_8(buf, op->size));
 			op->size++;
 		break;	
-		case DX :
-			sprintf(args, "1,xl,$%02x\0", read_8(buf, op->size));
+		case DX ://direct indexed X addressing mode
+		
+			sprintf(args, "2,xl,$%02x\0", read_8(buf, op->size));
 			op->size++;
 		break;
-		case DXI :  //direct indexed X addressing mode
+		case DXI :  
 			sprintf(args, "2,,xl,($%02x)\0", read_8(buf, op->size));
 			op->size++;
 		break;
@@ -271,14 +300,13 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	//a->immdisp = true; // force immediate display with # symbol (not ARM, but it uses the same syntax)
 
 	//int idx = (buf[0] & 0x0f) * 2;
-	
+	a->immdisp = true;
 	op->size = 1;
 	//char dest[20];
 	char arg[50];
 	ut16 instruction;
 	OpCode* opcd;
 	int prefix = 0;
-	
 	instruction = read_8(buf, 0); // grab instruction from buffer, with offset of 0
 
 	// pull the prefix of the instruction off, grabing from the tables corresponding to the addressing mode
@@ -305,21 +333,37 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	switch (opcd->op){
 	// Data len selection flag mutators
-
+	
 	case SEM:
-		GLOB_M = true;
+		if (!M_FLAGS_SET[a->pc]){
+			GLOB_M = true;
+			M_FLAGS_SET[a->pc] = true;
+			M_FLAGS[a->pc] = true;
+		}
 		break;
 	case CLM: 
-		GLOB_M = false;
+		if (!M_FLAGS_SET[a->pc]){
+			GLOB_M = false;
+			M_FLAGS_SET[a->pc] = true;
+			M_FLAGS[a->pc] = false;
+		}
 		break;
 		
 	// Carry flag mutators
 	case SEC:
-		GLOB_X = true;
+		if (!X_FLAGS_SET[a->pc]){
+			GLOB_X = true;
+			X_FLAGS_SET[a->pc] = true;
+			X_FLAGS[a->pc] = false;
+		}
 		break;
 
 	case CLC:
-		GLOB_X = false;
+		if (!X_FLAGS_SET[a->pc]){
+			GLOB_X = false;
+			X_FLAGS_SET[a->pc] = true;
+			X_FLAGS[a->pc] = true;
+		}
 		break;
 
 	// I flag mutators
@@ -330,16 +374,28 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	case CLI :
 		GLOB_I = false;
 		break;
+
 	default:
 		break;
 	};
+
+	if (!X_FLAGS_SET[a->pc]) {
+		X_FLAGS[a->pc] = GLOB_X;
+		X_FLAGS_SET[a->pc] = true;
+	}
 		
+	if (!M_FLAGS_SET[a->pc]) {
+		M_FLAGS[a->pc] = GLOB_M;
+		M_FLAGS_SET[a->pc] = true;
+	}
+
     strcpy (op->buf_asm, instruction_set[opcd->op]);
-		
-	char* vars = strtok(parse_args(opcd, op, buf, prefix, !GLOB_X && (opcd->flag == X), !GLOB_M && (opcd->flag == M), a), ",");
+	char* vars = strtok(parse_args(opcd, op, buf, prefix, (!X_FLAGS[a->pc] && (opcd->flag == X)), (!M_FLAGS[a->pc] && (opcd->flag == M)), a), ",");
 	
-	vars = vars+2; // drop leading argno and space
+	vars = vars + 2; // drop leading argno and space
 	int i = 0;
+
+	strcat (arg, "\0");
 
   	while (vars != NULL)
   	{
@@ -358,7 +414,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		i++;
   	}
 
-	op->buf_inc += op->size;
+	//op->buf_inc += op->size;
 
     if (*arg) {
         strcat (op->buf_asm, " ");

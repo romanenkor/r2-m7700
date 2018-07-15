@@ -1,0 +1,79 @@
+/ (fcn) fcn.00009000 (16 bits) 13
+|   fcn.00009000 ();
+|           ; XREFS: CALL 0x0000966f  CALL 0x000098b0  CALL 0x0000abc3  CALL 0x0000ac77  CALL 0x0000acf5  CALL 0x0000ad6c  
+|           ; XREFS: CALL 0x0000ae81  CALL 0x0000ae99  CALL 0x0000aefc  CALL 0x0000af22  CALL 0x0000b0bd  CALL 0x0000b126  
+|           ; XREFS: CALL 0x0000b132  CALL 0x0000b593  CALL 0x0000b59d  CALL 0x0000b615  CALL 0x0000b61d  CALL 0x0000b765  
+|           ; XREFS: CALL 0x0000ba58  CALL 0x0000ba77  CALL 0x0000bece  CALL 0x0000bef8  CALL 0x0000e41a  CALL 0x0000e44e  
+|           ; XREFS: CALL 0x0000f409  CALL 0x0000f66e  CALL 0x0000f6a2  CALL 0x0000f6d8  CALL 0x0000f7f9  CALL 0x0000f852  
+|           ; XREFS: CALL 0x0000f8d7  CALL 0x0000f901  CALL 0x0000aebc  
+|           0x00009000      c9f0           CMP al #0xf0
+|           0x00009002      f004           BEQ 0x9008
+|           0x00009004      9002           BCC 0x9008
+|           0x00009006      a9f0           LDA al #0xf0
+|       |   0x00009008      42a900         LDB bl #0x00
+\       |   0x0000900b      801b           BRA 0x9028                  ; fcn.0000900d+0x1b
+/ (fcn) fcn.0000900d (16 bits) 114
+|   fcn.0000900d ();
+|       |   ; CALL XREF from 0x0000ab30 (fcn.0000ab24)
+|       |   0x0000900d      c9f8           CMP al #0xf8
+|       |   0x0000900f      f004           BEQ 0x9015
+|       |   0x00009011      9002           BCC 0x9015
+|       |   0x00009013      a9f8           LDA al #0xf8
+|       |   0x00009015      42a900         LDB bl #0x00
+|       |   0x00009018      8011           BRA 0x902b
+|       |   0x0000901a      c9e0           CMP al #0xe0
+|       |   0x0000901c      f004           BEQ 0x9022
+|      ,==< 0x0000901e      9002           BCC 0x9022
+|      ||   0x00009020      a9e0           LDA al #0xe0
+|      ||   ; JMP XREF from 0x0000901e (fcn.0000900d)
+|      `--> 0x00009022      42a900         LDB bl #0x00
+|       |   0x00009025      4a             LSR al
+|       |   0x00009026      426a           ROR bl
+|       |   0x00009028      4a             LSR al
+|       |   0x00009029      426a           ROR bl
+|       |   0x0000902b      4a             LSR al
+|       |   0x0000902c      426a           ROR bl
+|       |   0x0000902e      4a             LSR al
+|       |   0x0000902f      426a           ROR bl
+|       |   0x00009031      4a             LSR al
+|       |   0x00009032      426a           ROR bl
+|       |   0x00009034      4248           PHB
+|       |   0x00009036      d8             CLM
+|       |   0x00009037      29ff00         AND ax #0x00ff
+|       |   0x0000903a      78             SEI
+|       |   0x0000903b      8e6010         STX 0x1060
+|       |   0x0000903e      18             CLC
+|       |   0x0000903f      6d6010         ADC 0x1060
+|       |   0x00009042      58             CLI
+|       |   0x00009043      aa             TAX
+|       |   0x00009044      f8             SEM
+|       |   0x00009045      4268           PLB
+|      ,==< 0x00009047      f031           BEQ 0x907a
+|      ||   0x00009049      b501           LDA xl $01
+|      ||   ; JMP XREF from 0x00009007 (fcn.00009000)
+|      |`-> 0x0000904b      38             SEC
+|      |    0x0000904c      f500           SBC xl $00
+|      |    ; JMP XREF from 0x00008fc0 (fcn.00008eae + 274)
+|      |,=< 0x0000904e      f02a           BEQ 0x907a
+|     ,===< 0x00009050      b018           BCS 0x906a
+|     |||   0x00009052      49ff           EOR al #0xff
+|     |||   0x00009054      3a             INA
+|     |||   0x00009055      4249ff         EORB bl #0xff
+|     |||   0x00009058      423a           INB
+|     |||   0x0000905a      78             SEI
+|     |||   0x0000905b      428d6010       STB 0x1060
+|     |||   0x0000905f      890d6010       MPY 0x1060
+|     |||   0x00009063      58             CLI
+|     |||   0x00009064      8928           XAB
+|     |||   0x00009066      18             CLC
+|     |||   0x00009067      7501           ADC xl $01
+      |||   0x00009069      60             RTS
+|     |||   ; JMP XREF from 0x00009050 (fcn.0000900d)
+|     `---> 0x0000906a      78             SEI
+|      ||   0x0000906b      428d6010       STB 0x1060
+|      ||   0x0000906f      890d6010       MPY 0x1060
+|      ||   0x00009073      58             CLI
+|      ||   0x00009074      8928           XAB
+|      ||   0x00009076      18             CLC
+|      ||   0x00009077      7500           ADC xl $00
+       ||   0x00009079      60             RTS

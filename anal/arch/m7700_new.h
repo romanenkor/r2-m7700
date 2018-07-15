@@ -8,8 +8,6 @@
 
 	There are a grand total of 103 instructions for the base m7700, each has a few permutations for each of the
 	addressing/bit length mode above.
-
-
  */
 
 #ifndef R_ASM
@@ -339,9 +337,6 @@ static const OpCode ops89[OPS] = {
 };
 
 //define registers
-typedef enum register_t {
-	a, b, x, y, s, pc, pg, dt, dpr, ps
-} Register;
 
 #define SIZE_AX		16
 #define SIZE_AL		8

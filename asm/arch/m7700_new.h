@@ -343,10 +343,6 @@ static const OpCode ops89[OPS] = {
 //	{"a"}, {"b"}, {"x"}, {"y"}, {"s"}, {"pc"}, {"pg"}, {"dt"}, {"dpr"}, {"ps"}
 //};
 
-typedef enum register_t {
-	a, b, x, y, s, pc, pg, dt, dpr, ps
-} Register;
-
 #define SIZE_AX		16
 #define SIZE_AL		8
 
@@ -453,4 +449,11 @@ static OpCode* GET_OPCODE(ut16 instruction, byte offset);
 static bool GLOB_M = true;
 static bool GLOB_X = false;
 static bool GLOB_I = false;
+
+static bool M_FLAGS[0xFFFF]; // by default, these should be treated as 0 = 1 and 1 = 0
+static bool X_FLAGS[0xFFFF];
+
+static bool M_FLAGS_SET[0xFFFF];
+static bool X_FLAGS_SET[0xFFFF];
+
 // global trackers for the flag bits
