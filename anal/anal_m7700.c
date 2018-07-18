@@ -129,22 +129,22 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 		// LDM specific accesses
 		case LDM4 :
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,0x%04x,0x%04x\0", read_16(buf, op->size + 2), read_16(buf, op->size));
+				sprintf(args, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 3;
 			}
 			else { // smaller
-				sprintf(args, "2,0x%02x,0x%04x\0", read_8(buf, op->size + 2), read_16(buf, op->size));
+				sprintf(args, "2,0x%02x,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 2;
 			}
 		break;
 		
 		case LDM5 :
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,0x%04x,0x%04x\0", read_16(buf, op->size + 2), read_16(buf, op->size));
+				sprintf(args, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else { // smaller
-				sprintf(args, "2,0x%04x,0x%02x\0", read_16(buf, op->size + 1), read_8(buf, op->size));
+				sprintf(args, "2,0x%02x,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 3;	
 			}
 		break;
@@ -429,11 +429,13 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		
 		case SEB:
 			r_strbuf_setf(&op->esil, "%s,%s,[],|=", ops[1], ops[2]);
-			op->type = R_ANAL_OP_TYPE_COND;
+			op->type = R_ANAL_OP_TYPE_OR;
+			op->ptr = ops[2];
 			break;
 		case CLB:
 			r_strbuf_setf(&op->esil, "%s,%s,[],^=", ops[1], ops[2]);
-			op->type = R_ANAL_OP_TYPE_COND;
+			op->type = R_ANAL_OP_TYPE_XOR;
+			op->ptr = ops[2];
 			break;
 
 		// load instructions (all kind of the same)
@@ -444,6 +446,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			// TODO: Implement ESIL for all memory loads, not just acc<-mem
 			r_strbuf_setf(&op->esil, "%s,[],%s,=", ops[2], ops[1]); // LOAD ACC FROM MEM
 			op->type = R_ANAL_OP_TYPE_LOAD;
+			op->ptr = r_num_get (NULL, (const char*) ops[2]);
 			break;
 
 		case LDM: // load to memory (immediate) 
@@ -486,6 +489,8 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 		// mathematical instructions
 		case CMP:
+		case CPX:
+		case CPY:
 		case CMPB:
 			switch (opcd->arg) {
 				case S: // only for constant values
@@ -587,7 +592,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 					break;
 				default:
 					op->type = R_ANAL_OP_TYPE_DIV | R_ANAL_OP_TYPE_IND;
-					op->ptr = r_num_get (NULL, (const char*) ops[2]);
+					op->ptr = r_num_get (NULL, (const char*) ops[2]); // indirect addressing
 					r_strbuf_setf (&op->esil, "%s,[],%s,/,%s,=",ops[2], ops[1], ops[1]);
 				break;
 				}

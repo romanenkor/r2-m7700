@@ -136,23 +136,23 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case LDM4 : // ldm
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,#$%04x,$%04x\0", read_16(buf, op->size+2), read_16(buf, op->size));
+				sprintf(args, "2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else { // smaller
-				sprintf(args, "2,#$%02x,$%04x\0", read_8(buf, op->size+2), read_16(buf, op->size));
+				sprintf(args, "2,#%02x,$0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size));
 				op->size += 3;	
 			}
 		break;
 		
 		case LDM5 : // ldm long
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,#$%04x,$%04x\0", read_16(buf, op->size+2), read_16(buf, op->size));
+				sprintf(args, "2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			
 			else { //smaller
-				sprintf(args, "2,#$%04x,$%02x\0", read_16(buf, op->size+1), read_8(buf, op->size));
+				sprintf(args, "2,#%02x,$0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size));
 				op->size += 3;
 			}
 		break;
@@ -414,7 +414,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		i++;
   	}
 
-	//op->buf_inc += op->size;
+	op->buf_inc += op->size;
 
     if (*arg) {
         strcat (op->buf_asm, " ");
