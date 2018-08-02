@@ -49,54 +49,54 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 	switch (opcd->arg) {
 
 		case IMP : // implied addressing mode - single instruction addressed to int. register
-			sprintf(args, "0");
+			snprintf(args, 60, "0");
 			break;
 
 	// accumulator register used
 		case ACC :
 			if (flag_x){
-				sprintf(args, "1,al");
+				snprintf(args, 60, "1,al");
 			} else {
-				sprintf(args, "1,ax");
+				snprintf(args, 60, "1,ax");
 			}
 			break;
 		case ACCB :
 			if (flag_x){
-				sprintf(args, "1,bl");
+				snprintf(args, 60, "1,bl");
 			} else {
-				sprintf(args, "1,bx");
+				snprintf(args, 60, "1,bx");
 			}
 			break;
 
 		// below occasonally causes segfault for some reason
 		case RELB :
 			op->size++;
-			sprintf(args, "1,0x%02hx", (ut16)(addr + op->size + read_8(buf, op->size - 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			snprintf(args, 60, "1,0x%02hx", (ut16)(addr + op->size + read_8(buf, op->size - 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 			
 		break;
 
 		case RELW :
 		case PER : 
 			op->size+=2;
-			sprintf(args, "1,0x%04hx", (ut16)(addr + op->size + read_16(buf, op->size - 2)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			snprintf(args, 60, "1,0x%04hx", (ut16)(addr + op->size + read_16(buf, op->size - 2)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case IMM : // immediate addressing - format: acc val
 			// check addressing mode - first is for 8 bit addressing mode, second for 16 bit
 			if (flag_m || flag_x) { 	// larger instruction/params
 				if (prefix == 42) //b
-					sprintf(args, "2,bx,0x%04x", read_16(buf, op->size));
+					snprintf(args, 60, "2,bx,0x%04x", read_16(buf, op->size));
 							
 				else 			 //a
-					sprintf(args, "2,ax,0x%04x", read_16(buf, op->size));
+					snprintf(args, 60, "2,ax,0x%04x", read_16(buf, op->size));
 							
 				op->size += 2;
 			}
 			else { //smaller instructions
 				if (prefix == 42) //b
-					sprintf(args, "2,bl,0x%02x", read_8(buf, op->size));	
+					snprintf(args, 60, "2,bl,0x%02x", read_8(buf, op->size));	
 				else			 //a
-					sprintf(args, "2,al,0x%02x", read_8(buf, op->size));	
+					snprintf(args, 60, "2,al,0x%02x", read_8(buf, op->size));	
 					
 				op->size++;		
 			}
@@ -105,11 +105,11 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 		case BBCD :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){// larger instruction
-				sprintf(args, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size+1), read_8(buf, op->size), (ut16)(addr + op->size + 4 + read_8(buf, op->size+3)));
+				snprintf(args, 60, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size+1), read_8(buf, op->size), (ut16)(addr + op->size + 4 + read_8(buf, op->size+3)));
 				op->size += 4; 
 			}
 			else {// smaller mem size flags asserted
-				sprintf(args, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 1), read_8(buf, op->size), (ut16)(addr + op->size + 3 + read_8(buf, op->size+2)));
+				snprintf(args, 60, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 1), read_8(buf, op->size), (ut16)(addr + op->size + 3 + read_8(buf, op->size+2)));
 				op->size += 3;
 			}
 		break;
@@ -117,11 +117,11 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 		case BBCA :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size),(ut16) (addr + op->size + 5 + read_8(buf, op->size + 4)));
+				snprintf(args, 60, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size),(ut16) (addr + op->size + 5 + read_8(buf, op->size + 4)));
 				op->size += 5;
 			}
 			else { // smaller
-				sprintf(args, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size), (ut16)(addr + op->size + 4 + read_8(buf, op->size + 3)));
+				snprintf(args, 60, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size), (ut16)(addr + op->size + 4 + read_8(buf, op->size + 3)));
 				op->size += 4;
 			}
 		break;
@@ -129,151 +129,151 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 		// LDM specific accesses
 		case LDM4 :
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 3;
 			}
 			else { // smaller
-				sprintf(args, "2,0x%02x,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "2,0x%02x,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 2;
 			}
 		break;
 		
 		case LDM5 :
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else { // smaller
-				sprintf(args, "2,0x%02x,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "2,0x%02x,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 3;	
 			}
 		break;
 
 		case LDM4X : 
 			if (flag_m || flag_x) { //larger
-				sprintf(args, "3,0x%04x,0x%02x,xl\0", read_16(buf, op->size + 1), read_8(buf, op->size));
+				snprintf(args, 60, "3,0x%04x,0x%02x,xl\0", read_16(buf, op->size + 1), read_8(buf, op->size));
 				op->size += 3;
 			}
 			else {// smaller
-				sprintf(args, "3,0x%02x,0x%02x,xl\0", read_8(buf, op->size + 1), read_8(buf, op->size));
+				snprintf(args, 60, "3,0x%02x,0x%02x,xl\0", read_8(buf, op->size + 1), read_8(buf, op->size));
 				op->size += 2;
 			}
 		break;
 		case LDM5X : 		
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "3,0x%04x,0x%04x,xl\0", read_16(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "3,0x%04x,0x%04x,xl\0", read_16(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else { // smaller
-				sprintf(args, "3,0x%02x,0x%04x,xl\0", read_8(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "3,0x%02x,0x%04x,xl\0", read_8(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 3;
 			}
 		break;
 
 		case A : // accumulator addressing mode
 		case PEA : 
-			sprintf(args, "1,0x%04x\0", read_16(buf, op->size));
+			snprintf(args, 60, "1,0x%04x\0", read_16(buf, op->size));
 			op->size +=2;
 
 		break;
 		case AI :
-			sprintf(args, "1,0x%04x\0", read_16(buf, op->size));
+			snprintf(args, 60, "1,0x%04x\0", read_16(buf, op->size));
 			op->size +=2;
 		break;
 	
 		case AL :
-			sprintf(args, "1,0x%06hx\0", read_24(buf, op->size)); // might need to be set to 06x
+			snprintf(args, 60, "1,0x%06hx\0", read_24(buf, op->size)); // might need to be set to 06x
 			op->size += 3;
 		break;
 	
 		case ALX : 
-			sprintf(args, "2,0x%06hx,xl\0", read_24(buf, op->size));
+			snprintf(args, 60, "2,0x%06hx,xl\0", read_24(buf, op->size));
 			op->size += 3;
 		break;
 		case AX :		
-			sprintf(args, "2,0x%04x,xl\0", read_16(buf, op->size));
+			snprintf(args, 60, "2,0x%04x,xl\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 		case AXI :
-			sprintf(args, "2,0x%04x,xl)\0", read_16(buf, op->size));
+			snprintf(args, 60, "2,0x%04x,xl)\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 		case AY :
-			sprintf(args, "2,0x%04x,yl\0", read_16(buf, op->size));
+			snprintf(args, 60, "2,0x%04x,yl\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 
 		case D : // direct addressing mode
 			if (prefix == 42){// B
 				if (flag_x){ // larger
-					sprintf(args, "2,bx,0x%02x\0", read_8(buf, op->size));
+					snprintf(args, 60, "2,bx,0x%02x\0", read_8(buf, op->size));
 					op->size+=2;
 					} 
 				else {
-					sprintf(args, "2,bl,0x%02x\0", read_8(buf, op->size));
+					snprintf(args, 60, "2,bl,0x%02x\0", read_8(buf, op->size));
 					op->size++;
 				}
 
 			} else{
 				if (flag_x){// larger
-					sprintf(args, "2,ax,0x%02x\0", read_8(buf, op->size));
+					snprintf(args, 60, "2,ax,0x%02x\0", read_8(buf, op->size));
 					op->size+=2;
 					} 
 				else {// i laid this method out really quite badly
-					sprintf(args, "2,al,0x%02x\0", read_8(buf, op->size));
+					snprintf(args, 60, "2,al,0x%02x\0", read_8(buf, op->size));
 					op->size++;
 				}			
 			}
 			
-			//sprintf(args, "1,0x%02x\0", read_8(buf, op->size));
+			//snprintf(args, 60, "1,0x%02x\0", read_8(buf, op->size));
 		break;
 		case DI : // direct indirect addressing mode
 		case PEI :
-			sprintf(args, "2,0x%02x\0", read_8(buf, op->size));
+			snprintf(args, 60, "2,0x%02x\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DIY : // direct indexed Y addressing mode
-			sprintf(args, "2,0x%02x,yl\0", read_8(buf, op->size));
+			snprintf(args, 60, "2,0x%02x,yl\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DLI :
-			sprintf(args, "1,0x%02x\0", read_8(buf, op->size));		
+			snprintf(args, 60, "1,0x%02x\0", read_8(buf, op->size));		
 			op->size++;
 		break;
 		case DLIY :
-			sprintf(args, "1,0x%02x,yl\0", read_8(buf, op->size));
+			snprintf(args, 60, "1,0x%02x,yl\0", read_8(buf, op->size));
 			op->size++;
 		break;	
 		case DX :			
-			sprintf(args, "1,0x%02x,xl\0", read_8(buf, op->size));
+			snprintf(args, 60, "1,0x%02x,xl\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DXI :  //direct indexed X addressing mode
-			sprintf(args, "2,0x%02x,xl\0", read_8(buf, op->size));
+			snprintf(args, 60, "2,0x%02x,xl\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DY :
-			sprintf(args, "2,0x%02x,yl\0", read_8(buf, op->size));
+			snprintf(args, 60, "2,0x%02x,yl\0", read_8(buf, op->size));
 			op->size++;
 		break;
 
 	// causes segfault
 		case S: // stack pointer relative
-			sprintf(args, "2,%s,s\0", int_8_str(read_8(buf, op->size)));
+			snprintf(args, 60, "2,%s,s\0", int_8_str(read_8(buf, op->size)));
 			op->size++;
 		break;
 		case SIY : // stack pointer relative with Y
-			sprintf(args, "3,%s,s,yl\0", int_8_str(read_8(buf, op->size)));
+			snprintf(args, 60, "3,%s,s,yl\0", int_8_str(read_8(buf, op->size)));
 			op->size++;
 		break;
 		case SIG : 
-			sprintf(args, "1,0x%02x\0", read_8(buf, op->size));
+			snprintf(args, 60, "1,0x%02x\0", read_8(buf, op->size));
 			op->size++;
 		break;
 
 		case MVN :
 		case MVP :
-			sprintf(args, "2,0x%02x,0x%02x\0", read_8(buf, op->size + 1), read_8(buf, op->size));
+			snprintf(args, 60, "2,0x%02x,0x%02x\0", read_8(buf, op->size + 1), read_8(buf, op->size));
 			op->size += 2;
 		break;	
 		default:

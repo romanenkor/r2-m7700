@@ -29,9 +29,9 @@ char* int_8_str(unsigned int val)
    val &= 0xff;
 
    if(val & 0x80)
-      sprintf(str, "-$%x", (0-val) & 0x7f);
+      snprintf(str, 20, "-$%x", (0-val) & 0x7f);
    else
-      sprintf(str, "$%x", val & 0x7f);
+      snprintf(str, 20, "$%x", val & 0x7f);
 
    return str;
 }
@@ -48,43 +48,44 @@ static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 
 static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool flag_x, bool flag_m, RAsm* a){
 
-	char* args = (char*)(malloc(sizeof(char*) * 60));	// alloc bufspace
+	const int bufsize= 60; 
+	char* args = (char*)(malloc(sizeof(char*) * bufsize));	// alloc bufspace
 	
 	switch (opcd->arg) {
 
 		case IMP : // implied addressing mode - single instruction addressed to int. register
-			sprintf(args, "0");
+			snprintf(args, bufsize, "0");
 			break;
 
 	// accumulator register used
 		case ACC :
 			if (!flag_x){
 
-				sprintf(args, "1,al");
+				snprintf(args, bufsize, "1,al");
 			} else {
-				sprintf(args, "1,ax");
+				snprintf(args, bufsize, "1,ax");
 			}
 			break;
 		case ACCB :
 			if (!flag_x){
 
-				sprintf(args, "1,bl");
+				snprintf(args, bufsize, "1,bl");
 			} else {
 
-				sprintf(args, "1,bx");
+				snprintf(args, bufsize, "1,bx");
 			}
 			break;
 
 		// below occasonally causes segfault for some reason
 		case RELB :
 			op->size++;
-			sprintf(args, "1,0x%02x", (a->pc + op->size + read_8(buf, op->size - 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			snprintf(args, bufsize, "1,0x%02x", (a->pc + op->size + read_8(buf, op->size - 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case RELW :
 		case PER : 
 			op->size+=2;
-			sprintf(args, "1,0x%04x", (a->pc + op->size + read_16(buf, op->size - 2)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			snprintf(args, bufsize, "1,0x%04x", (a->pc + op->size + read_16(buf, op->size - 2)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case IMM : // immediate addressing - format: acc val
@@ -92,18 +93,18 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger condition
 				if (prefix == 42)  //b
-					sprintf(args, "2,bx,#0x%04hx", read_16(buf, op->size));		
+					snprintf(args, bufsize, "2,bx,#0x%04hx", read_16(buf, op->size));		
 				
 				else			    //a 
-					sprintf(args, "2,ax,#0x%04hx", read_16(buf, op->size));	
+					snprintf(args, bufsize, "2,ax,#0x%04hx", read_16(buf, op->size));	
 				
 				op->size += 2;	
 			}
 			else { // smaller instruction/params
 				if (prefix == 42)//b
-					sprintf(args, "2,bl,#0x%02x", read_8(buf, op->size));			
+					snprintf(args, bufsize, "2,bl,#0x%02x", read_8(buf, op->size));			
 				else			 //a
-					sprintf(args, "2,al,#0x%02x", read_8(buf, op->size));			
+					snprintf(args, bufsize, "2,al,#0x%02x", read_8(buf, op->size));			
 				op->size++;
 			}
 			
@@ -112,11 +113,11 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		case BBCD :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){ // larger flags asserted	
-				sprintf(args, "3,#0x%04x,0x%02x,0x%04hx\0", read_16(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 5 + read_8(buf, op->size+3)));
+				snprintf(args, bufsize,"3,#0x%04x,0x%02x,0x%04hx\0", read_16(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 5 + read_8(buf, op->size+3)));
 				op->size += 4;
 			}
 			else {// smaller
-				sprintf(args, "3,#0x%02x,0x%02x,0x%04hx\0", read_8(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 4 +  read_8(buf, op->size+2)));
+				snprintf(args, bufsize,"3,#0x%02x,0x%02x,0x%04hx\0", read_8(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 4 +  read_8(buf, op->size+2)));
 				op->size += 3;		
 			}
 		break;
@@ -124,11 +125,11 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		case BBCA :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "3,#0x%04x,$0x%04x,0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 5)+ (char)read_8(buf, op->size+4)));
+				snprintf(args, bufsize,"3,#0x%04x,$0x%04x,0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 5)+ (char)read_8(buf, op->size+4)));
 				op->size += 5;
 			}
 			else { // smaller
-				sprintf(args, "3,#0x%02x,$0x%04x,0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 4) + (char)read_8(buf, op->size+3)));
+				snprintf(args, bufsize,"3,#0x%02x,$0x%04x,0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 4) + (char)read_8(buf, op->size+3)));
 				op->size += 4;		
 			}
 			
@@ -136,45 +137,45 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case LDM4 : // ldm
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else { // smaller
-				sprintf(args, "2,#%02x,$0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"2,#%02x,$0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size));
 				op->size += 3;	
 			}
 		break;
 		
 		case LDM5 : // ldm long
 			if (flag_m || flag_x) { // larger
-				sprintf(args, "2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			
 			else { //smaller
-				sprintf(args, "2,#%02x,$0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"2,#%02x,$0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size));
 				op->size += 3;
 			}
 		break;
 
 		case LDM4X : // ldm X direct
 			if (flag_m || flag_x) {// larger
-				sprintf(args, "3,#$%04x,$%02x,xl\0", read_16(buf, op->size+1), read_8(buf, op->size));
+				snprintf(args, bufsize,"3,#$%04x,$%02x,xl\0", read_16(buf, op->size+1), read_8(buf, op->size));
 				op->size += 3;
 			}
 			else { // smaller
-				sprintf(args, "3,#$%02x,$%02x,xl\0", read_8(buf, op->size+1), read_8(buf, op->size));
+				snprintf(args, bufsize,"3,#$%02x,$%02x,xl\0", read_8(buf, op->size+1), read_8(buf, op->size));
 				op->size += 2;
 			}
 		break;
 
 		case LDM5X : // ldm x direct long	
 			if (flag_m || flag_x) {// larger
-				sprintf(args, "3,#$%04x,$%04x,xl\0", read_16(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"3,#$%04x,$%04x,xl\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else {// smaller
-				sprintf(args, "3,#$%02x,$04x,xl\0", read_8(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"3,#$%02x,$04x,xl\0", read_8(buf, op->size+2), read_16(buf, op->size));
 				op->size += 3;
 			}
 		break;
@@ -183,53 +184,53 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case A : // accumulator addressing mode
 		case PEA : 
-			sprintf(args, "1,0x%04x\0", read_16(buf, op->size));			
+			snprintf(args, bufsize,"1,0x%04x\0", read_16(buf, op->size));			
 			op->size +=2;
 		break;
 		case AI :
-			sprintf(args, "1,($%04x)\0", read_16(buf, op->size));
+			snprintf(args, bufsize,"1,($%04x)\0", read_16(buf, op->size));
 			op->size +=2;
 		break;
 	
 		case AL :
-			sprintf(args, "1,$%08x\0", read_24(buf, op->size)); // might need to be set to 06x
+			snprintf(args, bufsize,"1,$%08x\0", read_24(buf, op->size)); // might need to be set to 06x
 			op->size += 3;
 		break;
 	
 		case ALX : 
-			sprintf(args, "2,$%08x,xl\0", read_24(buf, op->size));
+			snprintf(args, bufsize,"2,$%08x,xl\0", read_24(buf, op->size));
 			op->size += 3;
 		break;
 		case AX :
-			sprintf(args, "2,$%04x,xl\0", read_16(buf, op->size));
+			snprintf(args, bufsize,"2,$%04x,xl\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 		case AXI :
-			sprintf(args, "2,$%04x,xl)\0", read_16(buf, op->size));
+			snprintf(args, bufsize,"2,$%04x,xl)\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 		case AY :
-			sprintf(args, "2,$%04x,yl\0", read_16(buf, op->size));
+			snprintf(args, bufsize,"2,$%04x,yl\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 
 		case D : // direct addressing mode
 			if (flag_x){ // larger
 				if (prefix == 42) {
-					sprintf(args, "2,bx,$0x%04x\0", read_16(buf, op->size));
+					snprintf(args, bufsize,"2,bx,$0x%04x\0", read_16(buf, op->size));
 
 				} else {
-					sprintf(args, "2,ax,$0x%04x\0", read_16(buf, op->size));
+					snprintf(args, bufsize,"2,ax,$0x%04x\0", read_16(buf, op->size));
 				}
 				op->size+=2;
 
 			} 
 			else {// smaller
 				if (prefix == 42){
-					sprintf(args, "2,bl,$0x%02x\0", read_8(buf, op->size));
+					snprintf(args, bufsize,"2,bl,$0x%02x\0", read_8(buf, op->size));
 
 				} else {
-					sprintf(args, "2,al,$0x%02x\0", read_8(buf, op->size));
+					snprintf(args, bufsize,"2,al,$0x%02x\0", read_8(buf, op->size));
 				}
 				op->size++;
 
@@ -238,52 +239,52 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 		case DI : // direct indirect addressing mode
 		case PEI :
-			sprintf(args, "1,($%02x)\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"1,($%02x)\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DIY : // direct indexed Y addressing mode
-			sprintf(args, "2,yl,($%02x)\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"2,yl,($%02x)\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DLI :
-			sprintf(args, "1,[$%02x]\0", read_8(buf, op->size));		
+			snprintf(args, bufsize,"1,[$%02x]\0", read_8(buf, op->size));		
 			op->size++;
 		break;
 		case DLIY :
-			sprintf(args, "1,yl,[$%02x]\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"1,yl,[$%02x]\0", read_8(buf, op->size));
 			op->size++;
 		break;	
 		case DX ://direct indexed X addressing mode
 		
-			sprintf(args, "2,xl,$%02x\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"2,xl,$%02x\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DXI :  
-			sprintf(args, "2,,xl,($%02x)\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"2,,xl,($%02x)\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DY :
-			sprintf(args, "2,yl,$%02x\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"2,yl,$%02x\0", read_8(buf, op->size));
 			op->size++;
 		break;
 
 	// causes segfault
 		case S: 
-			sprintf(args, "1,%s\0", int_8_str(read_8(buf, op->size)));
+			snprintf(args, bufsize,"1,%s\0", int_8_str(read_8(buf, op->size)));
 			op->size++;
 		break;
 		case SIY : 
-			sprintf(args, "3,yl,%s\0", int_8_str(read_8(buf, op->size)));
+			snprintf(args, bufsize,"3,yl,%s\0", int_8_str(read_8(buf, op->size)));
 			op->size++;
 		break;
 		case SIG : 
-			sprintf(args, "1,$%02x\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"1,$%02x\0", read_8(buf, op->size));
 			op->size += 2;
 		break;
 
 		case MVN :
 		case MVP :
-			sprintf(args, "2,$%02x,$%02x\0", read_8(buf, op->size+1), read_8(buf, op->size));
+			snprintf(args, bufsize,"2,$%02x,$%02x\0", read_8(buf, op->size+1), read_8(buf, op->size));
 			op->size += 2;
 		break;	
 		default:
@@ -313,7 +314,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	switch (instruction){
 		// first two cases, remove prefix - otherwise just pass instruction
 		case 0x42: // x42 prefix - 
-			//sprintf(dest, "b"); // b reg prefix;
+			//snprintf(dest, bufsize,"b"); // b reg prefix;
 			instruction = read_8(buf, 1); // grab next instruction from buffer, with offset of 1
 			opcd = GET_OPCODE (instruction, 0x42); // grab opcode from instruction
 			op->size++;
@@ -326,7 +327,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			prefix = 89;
 			break;
 		default:   // other prefixes
-			//sprintf(dest, "a");
+			//snprintf(dest, bufsize,"a");
 			opcd = GET_OPCODE (instruction, 0x00); // grab opcode from instruction
 			break;
 	}
@@ -388,14 +389,16 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		M_FLAGS[a->pc] = GLOB_M;
 		M_FLAGS_SET[a->pc] = true;
 	}
+	char* opname = instruction_set[opcd->op];
+	strcat(opname, "\0");
+    strcpy (op->buf_asm, opname);
 
-    strcpy (op->buf_asm, instruction_set[opcd->op]);
 	char* vars = strtok(parse_args(opcd, op, buf, prefix, (!X_FLAGS[a->pc] && (opcd->flag == X)), (!M_FLAGS[a->pc] && (opcd->flag == M)), a), ",");
 	
 	vars = vars + 2; // drop leading argno and space
 	int i = 0;
 
-	strcat (arg, "\0");
+	strcpy (arg, "\0");
 
   	while (vars != NULL)
   	{
@@ -419,6 +422,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
     if (*arg) {
         strcat (op->buf_asm, " ");
         strcat (op->buf_asm, arg);
+		strcat (op->buf_asm, "\0"); // fuck it, this'll probably work
     }
 
 	free(vars);
