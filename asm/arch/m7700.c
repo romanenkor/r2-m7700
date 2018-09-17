@@ -215,17 +215,17 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 
 		case D : // direct addressing mode
-			if (flag_x){ // larger
-				if (prefix == 42) {
-					snprintf(args, bufsize,"2,bx,$0x%04x\0", read_16(buf, op->size));
+			//if (flag_x){ // larger
+			//	if (prefix == 42) {
+			//		snprintf(args, bufsize,"2,bx,$0x%04x\0", read_16(buf, op->size));
 
-				} else {
-					snprintf(args, bufsize,"2,ax,$0x%04x\0", read_16(buf, op->size));
-				}
-				op->size+=2;
+			//	} else {
+			//		snprintf(args, bufsize,"2,ax,$0x%04x\0", read_16(buf, op->size));
+			//	}
+			//	op->size+=2;
 
-			} 
-			else {// smaller
+			//} 
+			//else {// smaller
 				if (prefix == 42){
 					snprintf(args, bufsize,"2,bl,$0x%02x\0", read_8(buf, op->size));
 
@@ -234,7 +234,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 				}
 				op->size++;
 
-			}
+			//}
 
 		break;
 		case DI : // direct indirect addressing mode
