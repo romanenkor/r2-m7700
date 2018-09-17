@@ -137,12 +137,12 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case LDM4 : // ldm
 			if (flag_m || flag_x) { // larger
-				snprintf(args, bufsize,"2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
-				op->size += 4;
+				snprintf(args, bufsize,"2,#%04x,$0x%02hx\0", read_16(buf, op->size+1), read_8(buf, op->size));
+				op->size += 3;
 			}
 			else { // smaller
-				snprintf(args, bufsize,"2,#%02x,$0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size));
-				op->size += 3;	
+				snprintf(args, bufsize,"2,#%02x,$0x%02hx\0", read_8(buf, op->size+1), read_8(buf, op->size));
+				op->size += 2;	
 			}
 		break;
 		

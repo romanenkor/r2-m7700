@@ -803,7 +803,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		
 		// branch instructions
 		case BRA: // branch ALWAYS			
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ANAL_OP_TYPE_JMP | R_ANAL_OP_TYPE_CALL;
 			op->jump = r_num_get (NULL, (const char *)ops[1]); // grab op conditional
 			op->fail = r_num_get (NULL, (const char *)ops[1]);
 			//op->cond = R_ANAL_COND_AL;
@@ -812,7 +812,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BBC: // branch on bit clear 
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL;
 			op->jump = r_num_get (NULL, (const char *)ops[3]); // grab op conditional	
 			op->fail = op->addr + op->size;
 			//op->cond = R_ANAL_COND_NE; // 
@@ -821,7 +821,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BBS: // branch on bit set
-			op->type = R_ANAL_OP_TYPE_CJMP;
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL;
 			op->jump = r_num_get (NULL, (const char *)ops[3]); // grab op conditional		
 			r_strbuf_setf(&op->esil, "%s,&=,%s,?{,2,s,-=,pc,s,=[2],%s,pc,=,}", ops[1], ops[2], ops[3]);// set stack ptr
 			op->cond = R_ANAL_COND_EQ;
@@ -829,7 +829,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BCC: // branch on carry clear
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			//printf("op jump on bcc: 0x%0x04", op->jump);
 			op->fail = op->addr + op->size;
@@ -840,7 +840,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 			break;
 		case BCS: // branch if carry is set
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"cf,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  
@@ -848,20 +848,20 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			); // push PC to stack
 			break;
 		case BNE: // branch if zero flag clear
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"zf,!,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  ops[1]); // push PC to stack
 			break;
 		case BEQ: // branch if zero flag set
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"zf,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  ops[1]); // push PC to stack
 			break;
 		case BPL: // branch if negative flag clear
 
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 
@@ -870,20 +870,20 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case BMI: // branch if negative flag set -- have to change implementation of neg flag
 
 			r_strbuf_setf(&op->esil,"nf,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  ops[1]); // push PC to stack
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			//Todo: ESIL for this
 			break;
 		case BVC: // branch if overflow flag clear			
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"of,!,?{,2,s,-=,pc,s,=[2],%s,pc,=,}", ops[1]); // push PC to stack
 			break;
 		case BVS: // branch if overflow flag set
 			//r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
-			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"of,?{,2,s,-=,pc,s,=[2],%s,pc,=,}", ops[1]); // push PC to stack
@@ -892,10 +892,10 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);;
 			r_strbuf_setf(&op->esil,"$2,s,-=,pc,s,=[2],%s,pc,=", ops[1]); // push PC to stack
 			op->fail = op->addr + op->size;
-			op->type = R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CALL | R_ANAL_OP_TYPE_JMP; // conditional jump
 			break;
 		case JMP: // jump to new address via program counter 
-			op->type = R_ANAL_OP_TYPE_JMP;
+			op->type = R_ANAL_OP_TYPE_JMP | R_ANAL_OP_TYPE_CALL;
 			op->jump = r_num_get (NULL, (const char *)ops[1]);
 			op->jump = r_num_get (NULL, (const char *)ops[1]);
 			r_strbuf_setf(&op->esil,"%s,pc,=",ops[1]); // DOES NOT PUSH PC TO STACK
@@ -954,9 +954,8 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			// - takes the program address size, and the PC, adds them together, then loads it to the stack
 			// - sets the program counter to the first operand from the instruction
 			op->jump = r_num_get (NULL, (const char *)ops[1]);
-			op->type = R_ANAL_OP_TYPE_TRAP;
+			op->type = R_ANAL_OP_TYPE_TRAP | R_ANAL_OP_TYPE_CALL;
 			op->fail = op->addr + op->size;
-			
 			break;
 		case NOP:
 			op->type = R_ANAL_OP_TYPE_NOP;
