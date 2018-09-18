@@ -129,18 +129,18 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 		// LDM specific accesses
 		case LDM4 :
 			if (flag_m || flag_x) { // larger
-				snprintf(args, 60, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "2,0x%04hx,0x%02x\0", read_16(buf, op->size + 1), read_8(buf, op->size));
 				op->size += 3;
 			}
 			else { // smaller
-				snprintf(args, 60, "2,0x%02x,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "2,0x%02x,0x%02x\0", read_8(buf, op->size + 1), read_8(buf, op->size));
 				op->size += 2;
 			}
 		break;
 		
 		case LDM5 :
 			if (flag_m || flag_x) { // larger
-				snprintf(args, 60, "2,0x%04x,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
+				snprintf(args, 60, "2,0x%04hx,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else { // smaller
@@ -151,7 +151,7 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 
 		case LDM4X : 
 			if (flag_m || flag_x) { //larger
-				snprintf(args, 60, "3,0x%04x,0x%02x,xl\0", read_16(buf, op->size + 1), read_8(buf, op->size));
+				snprintf(args, 60, "3,0x%04hx,0x%02x,xl\0", read_16(buf, op->size + 1), read_8(buf, op->size));
 				op->size += 3;
 			}
 			else {// smaller
@@ -204,26 +204,13 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 		break;
 
 		case D : // direct addressing mode
-			if (prefix == 42){// B
-				if (flag_x){ // larger
-					snprintf(args, 60, "2,bx,0x%02x\0", read_8(buf, op->size));
-					op->size+=2;
-					} 
-				else {
-					snprintf(args, 60, "2,bl,0x%02x\0", read_8(buf, op->size));
-					op->size++;
-				}
+			if (prefix == 42){
+					snprintf(args, 60,"2,bl,$0x%02x\0", read_8(buf, op->size));
 
-			} else{
-				if (flag_x){// larger
-					snprintf(args, 60, "2,ax,0x%02x\0", read_8(buf, op->size));
-					op->size+=2;
-					} 
-				else {// i laid this method out really quite badly
-					snprintf(args, 60, "2,al,0x%02x\0", read_8(buf, op->size));
-					op->size++;
-				}			
-			}
+				} else {
+					snprintf(args, 60,"2,al,$0x%02x\0", read_8(buf, op->size));
+				}
+			op->size++;
 			
 			//snprintf(args, 60, "1,0x%02x\0", read_8(buf, op->size));
 		break;
@@ -453,7 +440,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			switch (opcd->arg) {
 				case LDM5X: case LDM4X:
 					r_strbuf_setf(&op->esil, "%s,%s,xl,+,[],=", ops[1], ops[2]);
-					op->type = R_ANAL_OP_TYPE_LOAD | R_ANAL_OP_TYPE_IND;
+					op->type = R_ANAL_OP_TYPE_LOAD;
 					op->ptr = r_num_get (NULL, (const char*) ops[2]) + r_anal_esil_reg_read(&op->esil, "xl", NULL, NULL);
 					break;
 				default:
@@ -803,7 +790,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		
 		// branch instructions
 		case BRA: // branch ALWAYS			
-			op->type = R_ANAL_OP_TYPE_JMP | R_ANAL_OP_TYPE_CALL;
+			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = r_num_get (NULL, (const char *)ops[1]); // grab op conditional
 			op->fail = r_num_get (NULL, (const char *)ops[1]);
 			//op->cond = R_ANAL_COND_AL;
@@ -812,7 +799,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BBC: // branch on bit clear 
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL;
+			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = r_num_get (NULL, (const char *)ops[3]); // grab op conditional	
 			op->fail = op->addr + op->size;
 			//op->cond = R_ANAL_COND_NE; // 
@@ -821,7 +808,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BBS: // branch on bit set
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL;
+			op->type = R_ANAL_OP_TYPE_CJMP;
 			op->jump = r_num_get (NULL, (const char *)ops[3]); // grab op conditional		
 			r_strbuf_setf(&op->esil, "%s,&=,%s,?{,2,s,-=,pc,s,=[2],%s,pc,=,}", ops[1], ops[2], ops[3]);// set stack ptr
 			op->cond = R_ANAL_COND_EQ;
@@ -829,7 +816,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			break;
 
 		case BCC: // branch on carry clear
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			//printf("op jump on bcc: 0x%0x04", op->jump);
 			op->fail = op->addr + op->size;
@@ -840,7 +827,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 
 			break;
 		case BCS: // branch if carry is set
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"cf,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  
@@ -848,20 +835,20 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			); // push PC to stack
 			break;
 		case BNE: // branch if zero flag clear
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"zf,!,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  ops[1]); // push PC to stack
 			break;
 		case BEQ: // branch if zero flag set
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"zf,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  ops[1]); // push PC to stack
 			break;
 		case BPL: // branch if negative flag clear
 
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 
@@ -870,20 +857,20 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case BMI: // branch if negative flag set -- have to change implementation of neg flag
 
 			r_strbuf_setf(&op->esil,"nf,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  ops[1]); // push PC to stack
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			//Todo: ESIL for this
 			break;
 		case BVC: // branch if overflow flag clear			
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"of,!,?{,2,s,-=,pc,s,=[2],%s,pc,=,}", ops[1]); // push PC to stack
 			break;
 		case BVS: // branch if overflow flag set
 			//r_strbuf_setf(&op->esil,"2,s,+=,[2],pc,="); // push PC to stack
-			op->type = R_ANAL_OP_TYPE_CJMP | R_ANAL_OP_TYPE_CALL; // conditional jump
+			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"of,?{,2,s,-=,pc,s,=[2],%s,pc,=,}", ops[1]); // push PC to stack

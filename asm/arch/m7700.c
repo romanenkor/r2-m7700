@@ -137,18 +137,18 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case LDM4 : // ldm
 			if (flag_m || flag_x) { // larger
-				snprintf(args, bufsize,"2,#%04x,$0x%02hx\0", read_16(buf, op->size+1), read_8(buf, op->size));
+				snprintf(args, bufsize,"2,#%04hx,$0x%02x\0", read_16(buf, op->size+1), read_8(buf, op->size));
 				op->size += 3;
 			}
 			else { // smaller
-				snprintf(args, bufsize,"2,#%02x,$0x%02hx\0", read_8(buf, op->size+1), read_8(buf, op->size));
+				snprintf(args, bufsize,"2,#%02x,$0x%02x\0", read_8(buf, op->size+1), read_8(buf, op->size));
 				op->size += 2;	
 			}
 		break;
 		
 		case LDM5 : // ldm long
 			if (flag_m || flag_x) { // larger
-				snprintf(args, bufsize,"2,#%04x,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"2,#%04hx,$0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			
@@ -160,7 +160,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case LDM4X : // ldm X direct
 			if (flag_m || flag_x) {// larger
-				snprintf(args, bufsize,"3,#$%04x,$%02x,xl\0", read_16(buf, op->size+1), read_8(buf, op->size));
+				snprintf(args, bufsize,"3,#$%04hx,$%02x,xl\0", read_16(buf, op->size+1), read_8(buf, op->size));
 				op->size += 3;
 			}
 			else { // smaller
@@ -171,11 +171,11 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case LDM5X : // ldm x direct long	
 			if (flag_m || flag_x) {// larger
-				snprintf(args, bufsize,"3,#$%04x,$%04x,xl\0", read_16(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"3,#$%04hx,$%04x,xl\0", read_16(buf, op->size+2), read_16(buf, op->size));
 				op->size += 4;
 			}
 			else {// smaller
-				snprintf(args, bufsize,"3,#$%02x,$04x,xl\0", read_8(buf, op->size+2), read_16(buf, op->size));
+				snprintf(args, bufsize,"3,#$%02x,$04hx,xl\0", read_8(buf, op->size+2), read_16(buf, op->size));
 				op->size += 3;
 			}
 		break;
@@ -184,7 +184,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 		case A : // accumulator addressing mode
 		case PEA : 
-			snprintf(args, bufsize,"1,0x%04x\0", read_16(buf, op->size));			
+			snprintf(args, bufsize,"1,0x%04hx\0", read_16(buf, op->size));			
 			op->size +=2;
 		break;
 		case AI :
@@ -202,15 +202,15 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			op->size += 3;
 		break;
 		case AX :
-			snprintf(args, bufsize,"2,$%04x,xl\0", read_16(buf, op->size));
+			snprintf(args, bufsize,"2,$%04hx,xl\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 		case AXI :
-			snprintf(args, bufsize,"2,$%04x,xl)\0", read_16(buf, op->size));
+			snprintf(args, bufsize,"2,$%04hx,xl)\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 		case AY :
-			snprintf(args, bufsize,"2,$%04x,yl\0", read_16(buf, op->size));
+			snprintf(args, bufsize,"2,$%04hx,yl\0", read_16(buf, op->size));
 			op->size += 2;
 		break;
 
@@ -260,7 +260,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			op->size++;
 		break;
 		case DXI :  
-			snprintf(args, bufsize,"2,,xl,($%02x)\0", read_8(buf, op->size));
+			snprintf(args, bufsize,"2,xl,($%02x)\0", read_8(buf, op->size));
 			op->size++;
 		break;
 		case DY :
