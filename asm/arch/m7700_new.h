@@ -450,7 +450,7 @@ static bool GLOB_M = true;
 static bool GLOB_X = false;
 static bool GLOB_I = false;
 
-static bool M_FLAGS[0xFFFF]; // by default, these should be treated as 0 = 1 and 1 = 0
+static bool M_FLAGS[0xFFFF]; 
 static bool X_FLAGS[0xFFFF];
 
 static bool M_FLAGS_SET[0xFFFF];

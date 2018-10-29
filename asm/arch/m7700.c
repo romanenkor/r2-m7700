@@ -59,7 +59,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 	// accumulator register used
 		case ACC :
-			if (!flag_x){
+			if (flag_x){
 
 				snprintf(args, bufsize, "1,al");
 			} else {
@@ -67,7 +67,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			}
 			break;
 		case ACCB :
-			if (!flag_x){
+			if (flag_x){
 
 				snprintf(args, bufsize, "1,bl");
 			} else {
@@ -93,10 +93,10 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger condition
 				if (prefix == 42)  //b
-					snprintf(args, bufsize, "2,bx,#0x%04hx", read_16(buf, op->size));		
+					snprintf(args, bufsize, "2,bx,#0x%04x", read_16(buf, op->size));		
 				
 				else			    //a 
-					snprintf(args, bufsize, "2,ax,#0x%04hx", read_16(buf, op->size));	
+					snprintf(args, bufsize, "2,ax,#0x%04x", read_16(buf, op->size));	
 				
 				op->size += 2;	
 			}
@@ -215,17 +215,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 
 		case D : // direct addressing mode
-			//if (flag_x){ // larger
-			//	if (prefix == 42) {
-			//		snprintf(args, bufsize,"2,bx,$0x%04x\0", read_16(buf, op->size));
 
-			//	} else {
-			//		snprintf(args, bufsize,"2,ax,$0x%04x\0", read_16(buf, op->size));
-			//	}
-			//	op->size+=2;
-
-			//} 
-			//else {// smaller
 				if (prefix == 42){
 					snprintf(args, bufsize,"2,bl,$0x%02x\0", read_8(buf, op->size));
 
@@ -295,10 +285,18 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 
 }
 
+/*
+	Takes null terminated string array, converts to int
+*/
+static int get_dest(char* params){
+	
+	int ret = 0;
+	ret = (int)strtol(params, NULL, 0);
+	return ret;
+}
+
 /* Main disassembly func */
 static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
-
-	//a->immdisp = true; // force immediate display with # symbol (not ARM, but it uses the same syntax)
 
 	//int idx = (buf[0] & 0x0f) * 2;
 	a->immdisp = true;
@@ -332,69 +330,85 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 			break;
 	}
 
-	switch (opcd->op){
-	// Data len selection flag mutators
+	 switch (opcd->op){
+	// // Data len selection flag mutators
 	
-	case SEM:
-		if (!M_FLAGS_SET[a->pc]){
-			GLOB_M = true;
-			M_FLAGS_SET[a->pc] = true;
-			M_FLAGS[a->pc] = true;
-		}
-		break;
-	case CLM: 
-		if (!M_FLAGS_SET[a->pc]){
-			GLOB_M = false;
-			M_FLAGS_SET[a->pc] = true;
-			M_FLAGS[a->pc] = false;
-		}
-		break;
+	 case SEM:
+	 	GLOB_M = true;
+	 	// if (!M_FLAGS_SET[a->pc]){
+	 	// 	M_FLAGS_SET[a->pc] = true;
+	 	// 	M_FLAGS[a->pc] = true;
+	 	// }
+	 	break;
+	 case CLM: 
+	 	GLOB_M = false;
+	 	// if (!M_FLAGS_SET[a->pc]){
+	 	// 	M_FLAGS_SET[a->pc] = true;
+	 	// 	M_FLAGS[a->pc] = false;
+	 	// }
+	 	break;
 		
-	// Carry flag mutators
-	case SEC:
-		if (!X_FLAGS_SET[a->pc]){
-			GLOB_X = true;
-			X_FLAGS_SET[a->pc] = true;
-			X_FLAGS[a->pc] = false;
-		}
-		break;
+	// // Carry flag mutators
+	//  case SEC:
+	// // X register data length manipulators
+	//
+	//  case CLC:
+	case SEP:
+	 	GLOB_X = true;
 
-	case CLC:
-		if (!X_FLAGS_SET[a->pc]){
-			GLOB_X = false;
-			X_FLAGS_SET[a->pc] = true;
-			X_FLAGS[a->pc] = true;
-		}
-		break;
+	 	if (!X_FLAGS_SET[a->pc]){
+	 		X_FLAGS_SET[a->pc] = true;
+	 		X_FLAGS[a->pc] = true;
+	 	}
+	 	break;
+	case CLP:
+	 	GLOB_X = false;
+	 	if (!X_FLAGS_SET[a->pc]){
+	 		X_FLAGS_SET[a->pc] = true;
+	 		X_FLAGS[a->pc] = false;
+	 	}
+	 	break;
 
-	// I flag mutators
-	case SEI: 
-		GLOB_I= true;
-		break;
+	// // I flag mutators
+	// case SEI: 
+	// 	GLOB_I= true;
+	// 	break;
 
-	case CLI :
-		GLOB_I = false;
-		break;
+	// case CLI :
+	// 	GLOB_I = false;
+	// 	break;
 
-	default:
-		break;
+	 default:
+	 	break;
 	};
 
-	if (!X_FLAGS_SET[a->pc]) {
-		X_FLAGS[a->pc] = GLOB_X;
-		X_FLAGS_SET[a->pc] = true;
-	}
-		
-	if (!M_FLAGS_SET[a->pc]) {
-		M_FLAGS[a->pc] = GLOB_M;
-		M_FLAGS_SET[a->pc] = true;
-	}
+	// if (!X_FLAGS_SET[a->pc]){
+
+	// 	X_FLAGS[a->pc] = GLOB_X;
+	// 	X_FLAGS_SET[a->pc] = true;
+	// } else {
+
+	// 	GLOB_X = X_FLAGS[a->pc];
+	// }
+	// if (!M_FLAGS_SET[a->pc]){
+
+	// 	M_FLAGS[a->pc] = GLOB_M;
+	// 	M_FLAGS_SET[a->pc] = true;
+	// } else {
+
+	// 	GLOB_M = M_FLAGS[a->pc];
+	// }
+	
+
 	char* opname = instruction_set[opcd->op];
 	strcat(opname, "\0");
     strcpy (op->buf_asm, opname);
 
-	char* vars = strtok(parse_args(opcd, op, buf, prefix, (!X_FLAGS[a->pc] && (opcd->flag == X)), (!M_FLAGS[a->pc] && (opcd->flag == M)), a), ",");
-	
+//X_FLAGS[a->pc]
+	char* vars = strtok(parse_args(opcd, op, buf, prefix, !(GLOB_X) && (opcd->flag == X), !(GLOB_M) && opcd->flag == M, a), ",");
+
+	char* var_copy;
+
 	vars = vars + 2; // drop leading argno and space
 	int i = 0;
 
@@ -416,13 +430,30 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		}
 		i++;
   	}
+	//   if (strcmp(opname, "JSR")){ // attempt to define the boundaries for the JSR
+
+	//   	int dest_addr = get_dest(arg);
+	// 	//printf("Dest addr: %d", dest_addr);
+	//   	if (!X_FLAGS_SET[dest_addr]){
+	//   		X_FLAGS[dest_addr] = GLOB_X;
+	//   		X_FLAGS_SET[dest_addr] = true;
+	//   	}
+	//   	if (!M_FLAGS_SET[dest_addr]){
+	//   		M_FLAGS[dest_addr] = GLOB_M;
+	//   		M_FLAGS_SET[dest_addr] = true;
+	//   	}
+	//   }  
 
 	op->buf_inc += op->size;
-
+	
     if (*arg) {
         strcat (op->buf_asm, " ");
         strcat (op->buf_asm, arg);
-		strcat (op->buf_asm, "\0"); // fuck it, this'll probably work
+		  strcat (op->buf_asm, " --  m:");
+		  strcat (op->buf_asm, M_FLAGS[a->pc] ? "1" : "0");
+		  strcat (op->buf_asm, " x:");
+		  strcat (op->buf_asm, X_FLAGS[a->pc] ? "1" : "0");
+		strcat (op->buf_asm, "\0"); 
     }
 
 	free(vars);

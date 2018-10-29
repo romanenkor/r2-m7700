@@ -339,4 +339,4 @@ static OpCode* GET_OPCODE(ut16 instruction, byte offset);
 static bool GLOB_M = true;
 static bool GLOB_X = false;
 static bool GLOB_I = false;
-// global trackers for the flag bits
+// global trackers for the flag bits - defaults to M=1, X=0

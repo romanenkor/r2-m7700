@@ -323,55 +323,47 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		//m
 		r_strbuf_setf(&op->esil, "0x1,m,=");
 		op->type = R_ANAL_OP_TYPE_COND;
-		ANAL_GLOB_M = true;
-		//  if (!ANAL_M_FLAGS_SET[op->addr]){
-		//  	ANAL_M_FLAGS[op->addr] = true;
-		//  	ANAL_M_FLAGS_SET[op->addr] = true;
-		//  }
+//ANAL_
+		if (!ANAL_M_FLAGS_SET[op->addr]){
+			ANAL_M_FLAGS[op->addr] = true;
+			ANAL_M_FLAGS_SET[op->addr] = true;
+			ANAL_GLOB_M = true;
+		}
 		break;
 
 	case CLM: 
 		//m
 		r_strbuf_setf(&op->esil, "0x0,m,=");
 		op->type = R_ANAL_OP_TYPE_COND;
-		ANAL_GLOB_M = false;
-		//  if (!ANAL_M_FLAGS_SET[op->addr]){
-		//  	ANAL_M_FLAGS[op->addr] = false;
-		//  	ANAL_M_FLAGS_SET[op->addr] = true;
-		//  }
+		if (!ANAL_M_FLAGS_SET[op->addr]){
+			ANAL_M_FLAGS[op->addr] = false;
+			ANAL_M_FLAGS_SET[op->addr] = true;
+			ANAL_GLOB_M = false;
+		}
 		break;
-	// index reg length manipulators:
-	case SEP:
-			op->type = R_ANAL_OP_TYPE_COND;
 
-			ANAL_GLOB_X = true;
-	break;
-	case CLP:
-			op->type = R_ANAL_OP_TYPE_COND;
-
-			ANAL_GLOB_X = false;
-
-	break;
 	// Carry flag mutators
 	case SEC:
 		//ix
-	//	r_strbuf_setf(&op->esil, "0x1,ix,=");
+		r_strbuf_setf(&op->esil, "0x1,ix,=");
 		op->type = R_ANAL_OP_TYPE_COND;
-
-		//  if (!ANAL_X_FLAGS_SET[op->addr]){
-		//  	ANAL_X_FLAGS[op->addr] = true;
-		//  	ANAL_X_FLAGS_SET[op->addr] = true;
-		//  }
+		if (!ANAL_X_FLAGS_SET[op->addr]){
+			ANAL_X_FLAGS[op->addr] = true;
+			ANAL_X_FLAGS_SET[op->addr] = true;
+			ANAL_GLOB_X = true;
+		}
 		break;
 
 	case CLC:
 		//ix
-		//r_strbuf_setf(&op->esil, "0x0,ix,=");
+		r_strbuf_setf(&op->esil, "0x0,ix,=");
 		op->type = R_ANAL_OP_TYPE_COND;
-		//  if (!ANAL_X_FLAGS_SET[op->addr]){
-		//  	ANAL_X_FLAGS[op->addr] = false;
-		//  	ANAL_X_FLAGS_SET[op->addr] = true;
-		// 		 }
+		if (!ANAL_X_FLAGS_SET[op->addr]){
+			ANAL_X_FLAGS[op->addr] = false;
+			ANAL_X_FLAGS_SET[op->addr] = true;
+			ANAL_GLOB_X = false;
+		}
+		
 		break;
 	// I flag mutators
 	case SEI: 
@@ -385,34 +377,27 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		// id
 		r_strbuf_setf(&op->esil, "0x0,id,=");
 		op->type = R_ANAL_OP_TYPE_COND;
-		ANAL_GLOB_I = false;
+		GLOB_I = false;
 		break;
 
 	default : 
 		break;
 	};
 
-	//  if (!ANAL_X_FLAGS_SET[op->addr]){
+	if (!ANAL_X_FLAGS_SET[op->addr]){
 
-	//  	ANAL_X_FLAGS[op->addr] = ANAL_GLOB_X;
-	//  	ANAL_X_FLAGS_SET[op->addr] = true;
-	//  } else {
+		ANAL_X_FLAGS[op->addr] = ANAL_GLOB_X;
+		ANAL_X_FLAGS_SET[op->addr] = true;
+	}
+	if (!ANAL_M_FLAGS_SET[op->addr]){
 
-	//  	ANAL_GLOB_X = ANAL_X_FLAGS[op->addr];
-	//  }
-	//  if (!ANAL_M_FLAGS_SET[op->addr]){
-
-	//  	ANAL_M_FLAGS[op->addr] = ANAL_GLOB_M;
-	//  	ANAL_M_FLAGS_SET[op->addr] = true;
-	//  }
-	//  else {
-	//  	ANAL_GLOB_M = ANAL_M_FLAGS[op->addr];
-	// }
+		ANAL_M_FLAGS[op->addr] = ANAL_GLOB_M;
+		ANAL_M_FLAGS_SET[op->addr] = true;
+	}
 	//printf("addr: %d\n", addr);
 	r_strbuf_init(&op->esil);
 	RReg *reg = anal->reg;
-	//ANAL_X_FLAGS[op->addr]
-	char* vars = parse_anal_args(opcd, op, data, prefix, !(ANAL_GLOB_X) && (opcd->flag == X), !(ANAL_GLOB_M) && (opcd->flag == M), anal, op->addr);
+	char* vars = parse_anal_args(opcd, op, data, prefix, !(X_FLAGS[op->addr]) && (opcd->flag == X), !(M_FLAGS[op->addr]) && (opcd->flag == M), anal, op->addr);
 
 	vars = strtok(vars, " ,.-");
 	int num_ops = (int) (vars[0] - '0');
@@ -774,6 +759,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case MVN: // transfer block of data from lower addresses
 		case MVP: // transfer block of data from higher address
 			op->type = R_ANAL_OP_TYPE_MOV;
+			//lol idk wtf
 			break;
 
 		case PSH: // push op to stack
@@ -866,7 +852,6 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->type = R_ANAL_OP_TYPE_CJMP; // conditional jump
 			op->jump = r_num_get (NULL, (const char *)ops[1]);//r_num_get (NULL, (const char *)ops[1]);; // grab op conditional 
 			op->fail = op->addr + op->size;
-
 			r_strbuf_setf(&op->esil,"nf,!,?{,2,s,-=,pc,s,=[2],%s,pc,=,}",  ops[1]); // push PC to stack
 			break;
 		case BMI: // branch if negative flag set -- have to change implementation of neg flag
@@ -896,20 +881,21 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			op->fail = op->addr + op->size;
 			op->type = R_ANAL_OP_TYPE_CALL | R_ANAL_OP_TYPE_JMP; // conditional jump
 
-	  		// if (!ANAL_X_FLAGS_SET[op->jump]){
-	  		// 	ANAL_X_FLAGS[op->jump] = ANAL_GLOB_X;
-	  		// 	ANAL_X_FLAGS_SET[op->jump] = true;
-	  		// }
-	  		// if (!ANAL_M_FLAGS_SET[op->jump]){
-	  		// 	ANAL_M_FLAGS[op->jump] = ANAL_GLOB_M;
-	  		// 	ANAL_M_FLAGS_SET[op->jump] = true;
-	  		// }	
+			//if (!ANAL_X_FLAGS_SET[op->jump]){
+	 		//	ANAL_X_FLAGS[op->addr] = ANAL_GLOB_X;
+	 		//	ANAL_X_FLAGS_SET[op->jump] = true;
+	 		//}
+	 		//if (!ANAL_M_FLAGS_SET[op->jump]){
+	 		//	ANAL_M_FLAGS[op->jump] = ANAL_GLOB_M;
+	 		//	ANAL_M_FLAGS_SET[op->jump] = true;
+	 		//}
+
 			break;
 		case JMP: // jump to new address via program counter 
-			//op->type = R_ANAL_OP_TYPE_JMP | R_ANAL_OP_TYPE_CALL;
-			op->jump = r_num_get (NULL, (const char *)ops[1]);
-			op->jump = r_num_get (NULL, (const char *)ops[1]);
-			r_strbuf_setf(&op->esil,"%s,pc,=",ops[1]); // DOES NOT PUSH PC TO STACK
+			op->type = R_ANAL_OP_TYPE_JMP | R_ANAL_OP_TYPE_CALL;
+		//	op->jump = r_num_get (NULL, (const char *)ops[1]);
+		//	op->jump = r_num_get (NULL, (const char *)ops[1]);
+		//	r_strbuf_setf(&op->esil,"%s,pc,=",ops[1]); // DOES NOT PUSH PC TO STACK
 
 			break;
 		case RTI: // return from interrupt
@@ -917,13 +903,13 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			r_strbuf_setf(&op->esil,
 				"s,[],pc,=,2,s,+="
 				);			
-			op->eob = true;			
-
-			//op->stackptr += 2;
+		
+			op->stackptr += 2;
 			// this esil does the following
 			// increments stack pointer by 2
 			// assigns the PC to the 2 bit value from the stack
 			op->type = R_ANAL_OP_TYPE_RET;
+			op->eob = true;
 			
 			// find the prefix89 instruction corresponding to this op
 			break;
@@ -964,15 +950,17 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 			// - sets the ID flag bit to 1, disabling interrupts
 			// - takes the program address size, and the PC, adds them together, then loads it to the stack
 			// - sets the program counter to the first operand from the instruction
-			op->jump = r_num_get (NULL, (const char *)ops[1]);
+			//op->jump = r_num_get (NULL, (const char *)ops[1]);
 			op->type = R_ANAL_OP_TYPE_TRAP | R_ANAL_OP_TYPE_CALL;
-			op->fail = op->addr + op->size;
+			//op->fail = op->addr + op->size;
 			break;
 		case NOP:
 			op->type = R_ANAL_OP_TYPE_NOP;
 			r_strbuf_setf(&op->esil, "nop");
 			break;
 	}
+
+	//printf("Flag: %d\n", M_FLAGS[addr]);
 
 	return op->size;
 }
