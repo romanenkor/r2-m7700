@@ -29,3 +29,7 @@ anal/massive_jsr.dot
 anal/fcg_full.pdf
 anal/out.dot
 m7700.code-workspace
+r2_bin/include/*
+*.swp
+*.o
+*.so

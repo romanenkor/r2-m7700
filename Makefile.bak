@@ -1,0 +1,24 @@
+ANAL_NAME=./anal/anal_m7700
+ASM_NAME=./asm/asm_m7700
+R2_PLUGIN_PATH=$(shell r2 -hh|grep LIBR_PLUGINS|awk '{print $$2}')
+CFLAGS=-g -fPIC $(shell pkg-config --cflags r_asm)
+LDFLAGS=-shared $(shell pkg-config --libs r_asm)
+OBJS=$(NAME).o
+SO_EXT=$(shell uname|grep -q Darwin && echo dylib || echo so)
+ANAL_LIB=$(ANAL_NAME).$(SO_EXT)
+ASM_LIB=$(ASM_NAME).$(SO_EXT)
+
+all: $(ASM_LIB) $(ANAL_LIB)
+
+clean:
+	rm -f $(ASM_LIB) $(ANAL_LIB) $(OBJS)
+
+$(ASM_LIB): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(ASM_LIB)
+
+$(ANAL_LIB): $(OBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(ANAL_LIB)
+install:
+	cp -f $(ANAL_NAME).$(SO_EXT) $(R2_PLUGIN_PATH) && cp -f $(ASM_NAME).$(SO_EXT) $(R2_PLUGIN_PATH)
+uninstall:
+	rm -f $(R2_PLUGIN_PATH)/$(ANAL_NAME).$(SO_EXT) && rm -f $(R2_PLUGIN_PATH)/$(ASM_NAME).$(SO_EXT)
