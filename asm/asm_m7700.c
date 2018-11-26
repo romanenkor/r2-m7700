@@ -4,12 +4,8 @@
 #include "./arch/m7700.c"
 //#include "./arch/m7700.h"
 
-
-
 /* Main disassembly func */
 static int disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
-
-	//TODO: disassembler needs to be able to properly get the flag_m and flag_x for the portion of the graph
 
 	return m7700_disassemble(a, op, buf, len);
 }

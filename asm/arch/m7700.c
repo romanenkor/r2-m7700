@@ -3,6 +3,9 @@
 #include <r_lib.h>
 #include "m7700_new.h"
 
+/*
+ Simple helper functions to read N bytes from the buffer
+*/
 static ut8 read_8(const ut8 *data, unsigned int offset) {
 
 	ut8 ret = data[offset];
@@ -295,7 +298,11 @@ static int get_dest(char* params){
 	return ret;
 }
 
-/* Main disassembly func */
+/* Main disassembly func hook to R2
+
+	R2 Gives global fields a, op, buf, and len for populating a and op
+	
+*/
 static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	//int idx = (buf[0] & 0x0f) * 2;
@@ -335,17 +342,17 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	
 	 case SEM:
 	 	GLOB_M = true;
-	 	// if (!M_FLAGS_SET[a->pc]){
-	 	// 	M_FLAGS_SET[a->pc] = true;
-	 	// 	M_FLAGS[a->pc] = true;
-	 	// }
+	 	if (!M_FLAGS_SET[a->pc]){
+	 		M_FLAGS_SET[a->pc] = true;
+	 		M_FLAGS[a->pc] = true;
+	 	}
 	 	break;
 	 case CLM: 
 	 	GLOB_M = false;
-	 	// if (!M_FLAGS_SET[a->pc]){
-	 	// 	M_FLAGS_SET[a->pc] = true;
-	 	// 	M_FLAGS[a->pc] = false;
-	 	// }
+	 	if (!M_FLAGS_SET[a->pc]){
+	 		M_FLAGS_SET[a->pc] = true;
+	 		M_FLAGS[a->pc] = false;
+	 	}
 	 	break;
 		
 	// // Carry flag mutators
@@ -390,14 +397,14 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 	// 	GLOB_X = X_FLAGS[a->pc];
 	// }
-	// if (!M_FLAGS_SET[a->pc]){
+	if (!M_FLAGS_SET[a->pc]){
 
-	// 	M_FLAGS[a->pc] = GLOB_M;
-	// 	M_FLAGS_SET[a->pc] = true;
-	// } else {
+		M_FLAGS[a->pc] = GLOB_M;
+		M_FLAGS_SET[a->pc] = true;
+	} else {
 
-	// 	GLOB_M = M_FLAGS[a->pc];
-	// }
+		GLOB_M = M_FLAGS[a->pc];
+	}
 	
 
 	char* opname = instruction_set[opcd->op];
@@ -405,6 +412,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
     strcpy (op->buf_asm, opname);
 
 //X_FLAGS[a->pc]
+	// parse all variables, tokenize them, parse
 	char* vars = strtok(parse_args(opcd, op, buf, prefix, !(GLOB_X) && (opcd->flag == X), !(GLOB_M) && opcd->flag == M, a), ",");
 
 	char* var_copy;
@@ -430,19 +438,19 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		}
 		i++;
   	}
-	//   if (strcmp(opname, "JSR")){ // attempt to define the boundaries for the JSR
+	  if (strcmp(opname, "JSR")){ // attempt to define the boundaries for the JSR
 
-	//   	int dest_addr = get_dest(arg);
+	  	int dest_addr = get_dest(arg);
 	// 	//printf("Dest addr: %d", dest_addr);
 	//   	if (!X_FLAGS_SET[dest_addr]){
 	//   		X_FLAGS[dest_addr] = GLOB_X;
 	//   		X_FLAGS_SET[dest_addr] = true;
 	//   	}
-	//   	if (!M_FLAGS_SET[dest_addr]){
-	//   		M_FLAGS[dest_addr] = GLOB_M;
-	//   		M_FLAGS_SET[dest_addr] = true;
-	//   	}
-	//   }  
+	  	if (!M_FLAGS_SET[dest_addr]){
+	  		M_FLAGS[dest_addr] = GLOB_M;
+	  		M_FLAGS_SET[dest_addr] = true;
+	  	}
+	  }  
 
 	op->buf_inc += op->size;
 	
