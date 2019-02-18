@@ -25,6 +25,20 @@ static ut24 read_24(const ut8 *data, unsigned int offset) {
 	return ret | data[offset + 2] << 16;
 }
 
+char* int_16_str(unsigned int val)
+{
+   static char str[20];
+
+   val &= 0xffff;
+
+   if(val & 0x8000)
+      sprintf(str, "-$%x", (0-val) & 0x7fff);
+   else
+      sprintf(str, "$%x", val & 0x7fff);
+
+   return str;
+}
+
 char* int_8_str(unsigned int val)
 {
    static char str[20];
@@ -49,11 +63,19 @@ static OpCode *GET_OPCODE(ut16 instruction, byte prefix) {
 	return (prefix == 0x89 ? ops89 + instruction : (prefix == 0x42 ? ops42 + instruction : ops + instruction));
 }
 
-static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool flag_x, bool flag_m, RAsm* a){
+static char* parse_args(OpCode *opcd, RAsmOp *op, unsigned int pc, unsigned int pb, ut8 *buf, int prefix, bool flag_x, bool flag_m, RAsm* a){
 
 	const int bufsize= 60; 
+	int var;
+	signed char varS;
 	char* args = (char*)(malloc(sizeof(char*) * bufsize));	// alloc bufspace
-	
+	pb <<= 16;
+	unsigned int address = pb | pc;
+	unsigned int start = address;
+	ut32 flags = 0;
+
+	address += op->size;
+
 	switch (opcd->arg) {
 
 		case IMP : // implied addressing mode - single instruction addressed to int. register
@@ -63,7 +85,6 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 	// accumulator register used
 		case ACC :
 			if (flag_x){
-
 				snprintf(args, bufsize, "1,al");
 			} else {
 				snprintf(args, bufsize, "1,ax");
@@ -71,24 +92,24 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 			break;
 		case ACCB :
 			if (flag_x){
-
 				snprintf(args, bufsize, "1,bl");
 			} else {
-
 				snprintf(args, bufsize, "1,bx");
 			}
 			break;
 
 		// below occasonally causes segfault for some reason
-		case RELB :
+		case RELB : // Relative
+			varS = read_8(buf, op->size);
 			op->size++;
-			snprintf(args, bufsize, "1,0x%02x", (a->pc + op->size + read_8(buf, op->size - 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
+			snprintf(args, bufsize, "1,0x%02x", pb | ((pc + op->size + varS) & 0xffff));//,  int_8_str(varS)); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
-		case RELW :
+		case RELW : // Relative
 		case PER : 
+			var = read_16(buf, op->size);
+			snprintf(args, bufsize, "1,0x%04x", pb | ((pc + op->size + var) & 0xffff));//, int_16_str(var)); // Need to add a way to parse the param from the instruction in buff for last param
 			op->size+=2;
-			snprintf(args, bufsize, "1,0x%04x", (a->pc + op->size + read_16(buf, op->size - 2)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case IMM : // immediate addressing - format: acc val
@@ -116,24 +137,28 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		case BBCD :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){ // larger flags asserted	
-				snprintf(args, bufsize,"3,#0x%04x,0x%02x,0x%04hx\0", read_16(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 5 + read_8(buf, op->size+3)));
-				op->size += 4;
+				op->size += 4;		// maybe change the last to 0x%04hx
+				varS = read_8(buf, op->size);
+				snprintf(args, bufsize,"4,#0x%04x,0x%02x,%06x\0", read_16(buf, op->size+1), read_8(buf, op->size), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
 			}
 			else {// smaller
-				snprintf(args, bufsize,"3,#0x%02x,0x%02x,0x%04hx\0", read_8(buf, op->size+1), read_8(buf, op->size), (ut16)(a->pc + op->size + 4 +  read_8(buf, op->size+2)));
-				op->size += 3;		
+				op->size += 3;		// maybe change the last to 0x%04hx
+				varS = read_8(buf, op->size);
+				snprintf(args, bufsize,"4,#0x%02x,0x%02x,%06x\0", read_8(buf, op->size+1), read_8(buf, op->size), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
 			}
 		break;
 
 		case BBCA :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
-				snprintf(args, bufsize,"3,#0x%04x,$0x%04x,0x%04hx\0", read_16(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 5)+ (char)read_8(buf, op->size+4)));
 				op->size += 5;
+				varS = read_8(buf, op->size);
+				snprintf(args, bufsize,"4,#0x%04x,$0x%04x,%06x\0", read_16(buf, op->size+2), read_16(buf, op->size), pb | (((ut16)(pc + op->size)+ varS) & 0xffff));//, int_8_str(varS));
 			}
 			else { // smaller
-				snprintf(args, bufsize,"3,#0x%02x,$0x%04x,0x%04hx\0", read_8(buf, op->size+2), read_16(buf, op->size), ((ut16)(a->pc + op->size + 4) + (char)read_8(buf, op->size+3)));
-				op->size += 4;		
+				op->size += 4;
+				varS = read_8(buf, op->size);			
+				snprintf(args, bufsize,"4,#0x%02x,$0x%04x,%06x\0", read_8(buf, op->size+2), read_16(buf, op->size), pb | (((ut16)(pc + op->size + 4) + varS) & 0xffff));//, int_8_str(varS));
 			}
 			
 		break;
@@ -188,11 +213,11 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		case A : // accumulator addressing mode
 		case PEA : 
 			snprintf(args, bufsize,"1,0x%04hx\0", read_16(buf, op->size));			
-			op->size +=2;
+			op->size += 2;
 		break;
 		case AI :
 			snprintf(args, bufsize,"1,($%04x)\0", read_16(buf, op->size));
-			op->size +=2;
+			op->size += 2;
 		break;
 	
 		case AL :
@@ -272,7 +297,7 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 		break;
 		case SIG : 
 			snprintf(args, bufsize,"1,$%02x\0", read_8(buf, op->size));
-			op->size += 2;
+			op->size ++;
 		break;
 
 		case MVN :
@@ -285,7 +310,6 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, ut8 *buf, int prefix, bool fla
 	}
 
 	return args;
-
 }
 
 /*
@@ -360,21 +384,21 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 	// // X register data length manipulators
 	//
 	//  case CLC:
-	case SEP:
-	 	GLOB_X = true;
+	// case SEP:
+	//  	GLOB_X = true;
 
-	 	if (!X_FLAGS_SET[a->pc]){
-	 		X_FLAGS_SET[a->pc] = true;
-	 		X_FLAGS[a->pc] = true;
-	 	}
-	 	break;
-	case CLP:
-	 	GLOB_X = false;
-	 	if (!X_FLAGS_SET[a->pc]){
-	 		X_FLAGS_SET[a->pc] = true;
-	 		X_FLAGS[a->pc] = false;
-	 	}
-	 	break;
+	//  	if (!X_FLAGS_SET[a->pc]){
+	//  		X_FLAGS_SET[a->pc] = true;
+	//  		X_FLAGS[a->pc] = true;
+	//  	}
+	//  	break;
+	// case CLP:
+	//  	GLOB_X = false;
+	//  	if (!X_FLAGS_SET[a->pc]){
+	//  		X_FLAGS_SET[a->pc] = true;
+	//  		X_FLAGS[a->pc] = false;
+	//  	}
+	//  	break;
 
 	// // I flag mutators
 	// case SEI: 
@@ -405,7 +429,6 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 		GLOB_M = M_FLAGS[a->pc];
 	}
-	
 
 	char* opname = instruction_set[opcd->op];
 	strcat(opname, "\0");
@@ -413,7 +436,7 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 
 //X_FLAGS[a->pc]
 	// parse all variables, tokenize them, parse
-	char* vars = strtok(parse_args(opcd, op, buf, prefix, !(GLOB_X) && (opcd->flag == X), !(GLOB_M) && opcd->flag == M, a), ",");
+	char* vars = strtok(parse_args(opcd, op, (a->pc&0xffff), a->pc>>16, buf, prefix, !(GLOB_X) && (opcd->flag == X), !(GLOB_M) && opcd->flag == M, a), ",");
 
 	char* var_copy;
 
@@ -438,19 +461,19 @@ static int m7700_disassemble(RAsm *a, RAsmOp *op, ut8 *buf, ut64 len) {
 		}
 		i++;
   	}
-	  if (strcmp(opname, "JSR")){ // attempt to define the boundaries for the JSR
+	//   if (strcmp(opname, "JSR")){ // attempt to define the boundaries for the JSR
 
-	  	int dest_addr = get_dest(arg);
-	// 	//printf("Dest addr: %d", dest_addr);
+	//   	int dest_addr = get_dest(arg);
+	// // 	//printf("Dest addr: %d", dest_addr);
 	//   	if (!X_FLAGS_SET[dest_addr]){
 	//   		X_FLAGS[dest_addr] = GLOB_X;
 	//   		X_FLAGS_SET[dest_addr] = true;
 	//   	}
-	  	if (!M_FLAGS_SET[dest_addr]){
-	  		M_FLAGS[dest_addr] = GLOB_M;
-	  		M_FLAGS_SET[dest_addr] = true;
-	  	}
-	  }  
+	//   	if (!M_FLAGS_SET[dest_addr]){
+	//   		M_FLAGS[dest_addr] = GLOB_M;
+	//   		M_FLAGS_SET[dest_addr] = true;
+	//   	}
+	//   }  
 
 	op->buf_inc += op->size;
 	

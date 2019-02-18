@@ -42,9 +42,17 @@ static ut16 read_flag_value(const char* flag_name, RAnal *anal){
   return r_reg_get_value(anal->reg, r_reg_get(anal->reg, flag_name, -1));
 }
 
-static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf, int prefix, bool flag_x, bool flag_m, RAnal* a, ut64 addr){
+static char* parse_anal_args(OpCode *opcd, RAnalOp *op, unsigned int pc, unsigned int pb, const unsigned char *buf, int prefix, bool flag_x, bool flag_m, RAnal* a, ut64 addr){
 
+	int var;
+	signed char varS;
 	char* args = (char*)(malloc(sizeof(char*) * 60));	// alloc bufspace
+	pb <<= 16;
+	//unsigned int address = pb | pc;
+	//unsigned int start = address;
+	ut32 flags = 0;
+
+	//address += op->size;
 
 	switch (opcd->arg) {
 
@@ -69,16 +77,17 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 			break;
 
 		// below occasonally causes segfault for some reason
-		case RELB :
+		case RELB : // Relative addr
+			varS = read_8(buf, op->size);
 			op->size++;
-			snprintf(args, 60, "1,0x%02hx", (ut16)(addr + op->size + read_8(buf, op->size - 1)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
-			
+			snprintf(args, 60, "1,0x%02hx", pb | ((addr + op->size + varS) & 0xffff)); //, int_8_str(varS)); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
-		case RELW :
+		case RELW : // Relative addr
 		case PER : 
+			var = read_16(buf, op->size);
+			snprintf(args, 60, "1,0x%04x", pb | ((addr + op->size + var) & 0xffff)); //int_16_str(var)); // Need to add a way to parse the param from the instruction in buff for last param
 			op->size+=2;
-			snprintf(args, 60, "1,0x%04hx", (ut16)(addr + op->size + read_16(buf, op->size - 2)) & 0xffff); // Need to add a way to parse the param from the instruction in buff for last param
 		break;
 
 		case IMM : // immediate addressing - format: acc val
@@ -105,24 +114,28 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 		case BBCD :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){// larger instruction
-				snprintf(args, 60, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size+1), read_8(buf, op->size), (ut16)(addr + op->size + 4 + read_8(buf, op->size+3)));
-				op->size += 4; 
+				op->size += 4;		// maybe change the last to 0x%04hx
+				varS = read_8(buf, op->size );
+				snprintf(args, 60, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size + 1), read_8(buf, op->size),  pb | ((addr + op->size + varS) & 0xffff));
 			}
 			else {// smaller mem size flags asserted
-				snprintf(args, 60, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 1), read_8(buf, op->size), (ut16)(addr + op->size + 3 + read_8(buf, op->size+2)));
-				op->size += 3;
+				op->size += 3;		// maybe change the last to 0x%04hx
+				varS = read_8(buf, op->size );			
+				snprintf(args, 60, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 1), read_8(buf, op->size), pb | ((addr + op->size + varS) & 0xffff));
 			}
 		break;
 
 		case BBCA :
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
-				snprintf(args, 60, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size + 2), read_16(buf, op->size),(ut16) (addr + op->size + 5 + read_8(buf, op->size + 4)));
 				op->size += 5;
+				varS = read_8(buf, op->size);
+				snprintf(args, 60, "3,0x%04x,%d,%06x\0", read_16(buf, op->size + 2), read_16(buf, op->size), pb | ((ut16) (addr + op->size + varS) & 0xffff));
 			}
 			else { // smaller
-				snprintf(args, 60, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 2), read_16(buf, op->size), (ut16)(addr + op->size + 4 + read_8(buf, op->size + 3)));
 				op->size += 4;
+				varS = read_8(buf, op->size);			
+				snprintf(args, 60, "3,0x%02x,%d,%06x\0", read_8(buf, op->size + 2), read_16(buf, op->size), pb | ((ut16)(addr + op->size + varS) & 0xffff));
 			}
 		break;
 
@@ -270,6 +283,155 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, const unsigned char *buf
 	return args;
 }
 
+/**
+ * Calculate addressing params for data location
+ * Also fill out operands for anal pointer (pass by ref) 
+*/
+static char* calc_addressing(RAnal *anal, RAnalOp *op, OpCode* opcd, char* addr, char* param){
+
+	char* ret = (char*)malloc(20);// allocate return characters
+
+	// First - calculate addresses based off addressing type. Put in any initial flags
+	switch (opcd->arg) {
+
+		case IMP : // implied addressing mode - single instruction addressed to int. register
+				   // nothing to be done here
+			break;
+
+	// accumulator register used
+		case ACC :
+				// nothing to be done here
+			break;
+		case ACCB :
+				// nothing to be done here
+
+		// below occasonally causes segfault for some reason
+		case RELB :
+			
+		break;
+
+		case RELW :
+		case PER : 
+
+		break;
+
+		case IMM : // immediate addressing - format: acc val
+			// check addressing mode - first is for 8 bit addressing mode, second for 16 bit
+
+		break;
+
+		case BBCD :
+			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
+
+		break;
+
+		case BBCA :
+			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
+
+		break;
+
+		// LDM specific accesses
+		case LDM4 :
+
+		break;
+		
+		case LDM5 :
+
+		break;
+
+		case LDM4X : 
+
+		break;
+		case LDM5X : 		
+
+		break;
+
+		case A : // absolute addressing mode
+
+			sprintf(ret, "%s,dt,", addr); // ops point to location in DT where data is
+
+		case PEA : 
+
+
+		break;
+		case AI :
+
+		break;
+	
+		case AL :
+
+		break;
+	
+		case ALX : 
+
+		break;
+		case AX :		
+
+		break;
+		case AXI :
+
+		break;
+		case AY :
+
+		break;
+
+		case D : // direct addressing mode
+			sprintf(ret, "%s,dpr,+", addr); // address + direct page register 
+			
+			break;
+		case DI : // direct indirect addressing mode
+
+			sprintf(ret, "[%s,dpr,+],dt,=", addr); // indirectly read from mem, store in DT
+			op->type |= R_ANAL_OP_TYPE_IND;
+
+		case PEI :
+	
+		break;
+		case DIY : // direct indirect indexed Y addressing mode
+			sprintf(ret, "[%s,dpr,+],y,+,dt,=[2]", addr); // indirectly read from mem using x + dpr + op, store in DT
+			op->type |= R_ANAL_OP_TYPE_IND;
+		break;
+		case DLI : // direct indirect long addressing mode
+			sprintf(ret, "[%s,dpr,+],dt,=[3]", addr); // indirectly read from mem using dpr + op, store in DT
+			op->type |= R_ANAL_OP_TYPE_IND;
+		break;
+		case DLIY : // direct indirect long indexed Y addressing mode
+			sprintf(ret, "[%s,dpr,+],y,+=[3],dt,=", addr); // indirectly read from mem using dpr + op, add to y, store in DT
+			op->type |= R_ANAL_OP_TYPE_IND;
+		break;	
+		case DX :	// direct indexed X addressing mode		
+			sprintf(ret, "%s,dpr,+,ix,+", addr); // dpr + op2 + contents of X
+		break;
+		case DXI :  //direct indexed X INDIRECT addressing mode
+			sprintf(ret, "[%s,dpr,+,ix,+],dt,=[2]", addr); // indirectly read from mem using x + dpr + op, store in DT
+			op->type |= R_ANAL_OP_TYPE_IND;
+		break;
+		case DY :   // direct indexed Y addressing mode
+			sprintf(ret, "%s,dpr,+,iy,+", addr); // dpr + op2 + contents of Y
+		break;
+
+	// causes segfault
+		case S: // stack pointer relative
+
+		break;
+		case SIY : // stack pointer relative with Y
+
+		break;
+		case SIG : 
+
+		break;
+
+		case MVN :
+		case MVP :
+
+		break;	
+		default:
+			break;
+	}
+	// Then - fill out rest of information based off instruction type. Assign ESIL
+
+}
+
 static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int len) {
 
 	if (op == NULL)
@@ -411,7 +573,7 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	r_strbuf_init(&op->esil);
 	RReg *reg = anal->reg;
 	//ANAL_X_FLAGS[op->addr]
-	char* vars = parse_anal_args(opcd, op, data, prefix, !(ANAL_GLOB_X) && (opcd->flag == X), !(ANAL_GLOB_M) && (opcd->flag == M), anal, op->addr);
+	char* vars = parse_anal_args(opcd, op, op->addr & 0xffff, op->addr>>16, data, prefix, !(ANAL_GLOB_X) && (opcd->flag == X), !(ANAL_GLOB_M) && (opcd->flag == M), anal, op->addr);
 
 	vars = strtok(vars, " ,.-");
 	int num_ops = (int) (vars[0] - '0');
@@ -445,11 +607,13 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 		case LDB: // load to accumulator B
 		case LDX: // load to index reg X
 		case LDY: // load to index reg Y
+			switch (opcd->arg) {
 			// TODO: Implement ESIL for all memory loads, not just acc<-mem
 			r_strbuf_setf(&op->esil, "%s,[],%s,=", ops[2], ops[1]); // LOAD ACC FROM MEM
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			op->ptr = r_num_get (NULL, (const char*) ops[2]);
 			break;
+			}
 
 		case LDM: // load to memory (immediate) 
 			switch (opcd->arg) {
@@ -905,11 +1069,15 @@ static int m7700_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, i
 	  		}	
 			break;
 		case JMP: // jump to new address via program counter 
-			//op->type = R_ANAL_OP_TYPE_JMP | R_ANAL_OP_TYPE_CALL;
+			op->type = R_ANAL_OP_TYPE_JMP;
 			op->jump = r_num_get (NULL, (const char *)ops[1]);
-			op->jump = r_num_get (NULL, (const char *)ops[1]);
+			//op->jump = r_num_get (NULL, (const char *)ops[1]);
+			op->fail = op->addr + op->size;
 			r_strbuf_setf(&op->esil,"%s,pc,=",ops[1]); // DOES NOT PUSH PC TO STACK
-
+	  		if (!ANAL_M_FLAGS_SET[op->jump]){
+	  			ANAL_M_FLAGS[op->jump] = ANAL_GLOB_M;
+	  			ANAL_M_FLAGS_SET[op->jump] = true;
+	  		}	
 			break;
 		case RTI: // return from interrupt
 
