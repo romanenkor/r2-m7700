@@ -138,13 +138,14 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, unsigned int pc, unsigned int 
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){ // larger flags asserted	
 				op->size += 4;		// maybe change the last to 0x%04hx
-				varS = read_8(buf, op->size);
-				snprintf(args, bufsize,"4,#0x%04x,0x%02x,%06x\0", read_16(buf, op->size+1), read_8(buf, op->size), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
+				varS = read_8(buf, 4);
+				snprintf(args, bufsize,"4,#0x%04x,0x%02x,0x%06x\0", read_16(buf, 2), read_8(buf, 1), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
+
 			}
 			else {// smaller
 				op->size += 3;		// maybe change the last to 0x%04hx
-				varS = read_8(buf, op->size);
-				snprintf(args, bufsize,"4,#0x%02x,0x%02x,%06x\0", read_8(buf, op->size+1), read_8(buf, op->size), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
+				varS = read_8(buf, 3);
+				snprintf(args, bufsize,"4,#0x%02x,0x%02x,0x%06x\0", read_8(buf, 2), read_8(buf, 1), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
 			}
 		break;
 
@@ -152,13 +153,13 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, unsigned int pc, unsigned int 
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
 				op->size += 5;
-				varS = read_8(buf, op->size);
-				snprintf(args, bufsize,"4,#0x%04x,$0x%04x,%06x\0", read_16(buf, op->size+2), read_16(buf, op->size), pb | (((ut16)(pc + op->size)+ varS) & 0xffff));//, int_8_str(varS));
+				varS = read_8(buf, 5);
+				snprintf(args, bufsize,"4,#0x%04x,$0x%04x,0x%06x\0", read_16(buf, 3), read_16(buf, 1), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
 			}
-			else { // smaller
+			else { // smaller				
 				op->size += 4;
-				varS = read_8(buf, op->size);			
-				snprintf(args, bufsize,"4,#0x%02x,$0x%04x,%06x\0", read_8(buf, op->size+2), read_16(buf, op->size), pb | (((ut16)(pc + op->size + 4) + varS) & 0xffff));//, int_8_str(varS));
+				varS = read_8(buf, 4);			
+				snprintf(args, bufsize,"4,#0x%02x,$0x%04x,0x%06x\0", read_8(buf, 3), read_16(buf, 1), pb | ((pc + op->size + varS) & 0xffff));//, int_8_str(varS));
 			}
 			
 		break;
@@ -221,12 +222,12 @@ static char* parse_args(OpCode *opcd, RAsmOp *op, unsigned int pc, unsigned int 
 		break;
 	
 		case AL :
-			snprintf(args, bufsize,"1,$%08x\0", read_24(buf, op->size)); // might need to be set to 06x
+			snprintf(args, bufsize,"1,$%06hx\0", read_24(buf, op->size)); // might need to be set to 06x
 			op->size += 3;
 		break;
 	
 		case ALX : 
-			snprintf(args, bufsize,"2,$%08x,xl\0", read_24(buf, op->size));
+			snprintf(args, bufsize,"2,$%06hx,xl\0", read_24(buf, op->size));
 			op->size += 3;
 		break;
 		case AX :

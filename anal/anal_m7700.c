@@ -115,13 +115,13 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, unsigned int pc, unsigne
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x){// larger instruction
 				op->size += 4;		// maybe change the last to 0x%04hx
-				varS = read_8(buf, op->size );
-				snprintf(args, 60, "3,0x%04x,%d,0x%04hx\0", read_16(buf, op->size + 1), read_8(buf, op->size),  pb | ((addr + op->size + varS) & 0xffff));
+				varS = read_8(buf, 4);
+				snprintf(args, 60, "3,0x%04x,%d,0x%06x\0", read_16(buf, 2), read_8(buf, 1),  pb | ((addr + op->size + varS) & 0xffff));
 			}
 			else {// smaller mem size flags asserted
 				op->size += 3;		// maybe change the last to 0x%04hx
-				varS = read_8(buf, op->size );			
-				snprintf(args, 60, "3,0x%02x,%d,0x%04hx\0", read_8(buf, op->size + 1), read_8(buf, op->size), pb | ((addr + op->size + varS) & 0xffff));
+				varS = read_8(buf, 3);			
+				snprintf(args, 60, "3,0x%02x,%d,0x%06x\0", read_8(buf, 2), read_8(buf, 1), pb | ((addr + op->size + varS) & 0xffff));
 			}
 		break;
 
@@ -129,13 +129,15 @@ static char* parse_anal_args(OpCode *opcd, RAnalOp *op, unsigned int pc, unsigne
 			// check addressing mode - first is for 16 bit addressing mode, second for 8 bit
 			if (flag_m || flag_x) { // larger
 				op->size += 5;
-				varS = read_8(buf, op->size);
-				snprintf(args, 60, "3,0x%04x,%d,%06x\0", read_16(buf, op->size + 2), read_16(buf, op->size), pb | ((ut16) (addr + op->size + varS) & 0xffff));
+
+				varS = read_8(buf, 5);
+				snprintf(args, 60, "3,0x%04x,0x%04x,0x%06x\0", read_16(buf, 3), read_16(buf, 1), pb | ((addr + op->size + varS) & 0xffff));
 			}
 			else { // smaller
 				op->size += 4;
-				varS = read_8(buf, op->size);			
-				snprintf(args, 60, "3,0x%02x,%d,%06x\0", read_8(buf, op->size + 2), read_16(buf, op->size), pb | ((ut16)(addr + op->size + varS) & 0xffff));
+
+				varS = read_8(buf, 4);			
+				snprintf(args, 60, "3,0x%02x,0x%04x,0x%06x\0", read_8(buf, 3), read_16(buf, 1), pb | ((addr + op->size + varS) & 0xffff));
 			}
 		break;
 
